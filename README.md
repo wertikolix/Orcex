@@ -3,6 +3,7 @@
 Ultra-lightweight native LaTeX math library for Kotlin Multiplatform under `ru.wertik.orcex`.
 
 [![CI](https://github.com/wertikolix/Orcex/actions/workflows/ci.yml/badge.svg)](https://github.com/wertikolix/Orcex/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/ru.wertik.orcex/orcex-core?label=Maven%20Central)](https://central.sonatype.com/artifact/ru.wertik.orcex/orcex-core)
 
 ## Modules
 
