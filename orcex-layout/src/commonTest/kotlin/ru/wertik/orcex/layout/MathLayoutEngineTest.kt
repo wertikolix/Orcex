@@ -98,6 +98,47 @@ class MathLayoutEngineTest {
         assertTrue(indexed.width - plain.width < 40f * 0.2f)
     }
 
+    @Test
+    fun laysOutAccentsTextAndAllMatrixDecorations() {
+        val accents = engine.layout(parser.parse("\\hat{x}+\\bar{x}+\\vec{x}+\\dot{x}+\\tilde{x}+\\text{ok}"))
+        val values = accents.commands.filterIsInstance<DrawCommand.Text>().map { it.value }
+        assertTrue(values.containsAll(listOf("ˆ", "→", "˙", "˜", "ok")))
+        assertTrue(accents.commands.filterIsInstance<DrawCommand.Line>().isNotEmpty())
+
+        mapOf(
+            "matrix" to emptyList(),
+            "pmatrix" to listOf("(", ")"),
+            "vmatrix" to listOf("|", "|"),
+            "cases" to listOf("{"),
+        ).forEach { (name, expectedDelimiters) ->
+            val layout = engine.layout(parser.parse("\\begin{$name}x&y\\\\z&w\\end{$name}"))
+            val text = layout.commands.filterIsInstance<DrawCommand.Text>().map { it.value }
+            assertTrue(expectedDelimiters.all(text::contains))
+            assertTrue(layout.width > 0f && layout.height > 0f)
+        }
+    }
+
+    @Test
+    fun mapsMathematicalAlphabetVariantsAndSpacingKinds() {
+        assertEquals("Az09", MathAlphabet.apply("Az09", null))
+        assertEquals("Az09", MathAlphabet.apply("Az09", ru.wertik.orcex.core.TextStyle.ROMAN))
+        assertEquals("𝐀𝐳1", MathAlphabet.apply("Az1", ru.wertik.orcex.core.TextStyle.BOLD))
+        assertEquals("ℎ𝑥!", MathAlphabet.apply("hx!", ru.wertik.orcex.core.TextStyle.ITALIC))
+        assertEquals("ℬ𝒜ℯ", MathAlphabet.apply("BAe", ru.wertik.orcex.core.TextStyle.CALLIGRAPHIC))
+        assertEquals("ℝ𝔸𝕩", MathAlphabet.apply("RAx", ru.wertik.orcex.core.TextStyle.BLACKBOARD))
+
+        val ordinary = ru.wertik.orcex.core.MathNode.Symbol("x")
+        val binary = ru.wertik.orcex.core.MathNode.Symbol("+", ru.wertik.orcex.core.SymbolKind.BINARY)
+        val relation = ru.wertik.orcex.core.MathNode.Symbol("=", ru.wertik.orcex.core.SymbolKind.RELATION)
+        val punctuation = ru.wertik.orcex.core.MathNode.Symbol(",", ru.wertik.orcex.core.SymbolKind.PUNCTUATION)
+        val operator = ru.wertik.orcex.core.MathNode.Symbol("sin", ru.wertik.orcex.core.SymbolKind.OPERATOR)
+        assertEquals(0f, MathSpacing.between(null, binary, ordinary, 10f))
+        assertEquals(2.2f, MathSpacing.between(ordinary, binary, ordinary, 10f), 0.001f)
+        assertEquals(2.8f, MathSpacing.between(ordinary, ordinary, relation, 10f), 0.001f)
+        assertEquals(1.7f, MathSpacing.between(ordinary, punctuation, ordinary, 10f), 0.001f)
+        assertEquals(1.7f, MathSpacing.between(ordinary, operator, ordinary, 10f), 0.001f)
+    }
+
     private object FixedMetrics : MathFontMetrics {
         override fun measure(text: String, style: MathStyle): GlyphMetrics = GlyphMetrics(
             width = text.codePointCount() * style.fontSize * 0.48f,

@@ -12,6 +12,7 @@ All notable changes to Orcex are documented here.
 - Position indexed radical prefixes correctly without reserving padding after the radicand.
 - Add responsive layout regression coverage across `12sp` to `96sp` and publish Kover HTML/XML reports in CI.
 - Remove the Gradle 10-incompatible execution-time project access from Maven bundle publication.
+- Expand meaningful edge-case tests to complete executable line coverage and remove unreachable branches found during the audit.
 
 ## 0.1.0 - 2026-05-26
 

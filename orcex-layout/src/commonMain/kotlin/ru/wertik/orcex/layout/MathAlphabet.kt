@@ -15,10 +15,10 @@ internal object MathAlphabet {
     )
 
     fun apply(value: String, style: TextStyle?): String {
-        if (style == null || style == TextStyle.ROMAN) return value
-        return buildString {
-            value.forEach { character -> appendCodePoint(mappedCodePoint(character, style)) }
-        }
+        if (style == null) return value
+        val result = StringBuilder()
+        value.forEach { character -> result.appendMathCodePoint(mappedCodePoint(character, style)) }
+        return result.toString()
     }
 
     private fun mappedCodePoint(character: Char, style: TextStyle): Int = when (style) {
@@ -35,7 +35,7 @@ internal object MathAlphabet {
         else -> null
     }
 
-    private fun StringBuilder.appendCodePoint(codePoint: Int) {
+    private fun StringBuilder.appendMathCodePoint(codePoint: Int) {
         if (codePoint <= 0xFFFF) {
             append(codePoint.toChar())
         } else {

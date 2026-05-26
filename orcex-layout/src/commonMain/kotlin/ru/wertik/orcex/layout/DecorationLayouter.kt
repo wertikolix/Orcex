@@ -31,17 +31,17 @@ internal class DecorationLayouter(private val scope: LayoutScope) {
         val content = scope.box(node.content, style)
         val gap = style.fontSize * 0.07f
         val y = -content.ascent - gap
-        if (node.accent == AccentType.BAR) {
-            val thickness = max(1f, style.fontSize * 0.04f)
-            return LayoutBox(content.width, content.ascent + gap + thickness, content.descent,
-                content.commands + DrawCommand.Line(0f, y, content.width, y, thickness))
-        }
         val mark = when (node.accent) {
             AccentType.HAT -> "ˆ"
             AccentType.VEC -> "→"
             AccentType.DOT -> "˙"
             AccentType.TILDE -> "˜"
-            AccentType.BAR -> error("handled")
+            AccentType.BAR -> null
+        }
+        if (mark == null) {
+            val thickness = max(1f, style.fontSize * 0.04f)
+            return LayoutBox(content.width, content.ascent + gap + thickness, content.descent,
+                content.commands + DrawCommand.Line(0f, y, content.width, y, thickness))
         }
         val accent = scope.text(mark, style.script())
         return LayoutBox(content.width, content.ascent + accent.height + gap, content.descent,

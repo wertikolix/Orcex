@@ -71,4 +71,4 @@ The repository is prepared for Maven Central Portal bundle publishing and GitHub
 ./gradlew centralBundleZip
 ```
 
-Tests cover nested formulas, calculus operators, whitespace tolerance, module switches, malformed input, responsive geometry, matrix layout, rules, scripts and Unicode mathematical alphabet glyph output. CI enforces at least 80% line coverage, writes reports to `build/reports/kover` and uploads a rendered STIX Two Math formula preview sheet.
+Tests cover nested formulas, calculus operators, whitespace tolerance, module switches, malformed input, responsive geometry, matrix layout, rules, scripts and Unicode mathematical alphabet glyph output. CI enforces complete executable line coverage, writes reports to `build/reports/kover` and uploads a rendered STIX Two Math formula preview sheet.

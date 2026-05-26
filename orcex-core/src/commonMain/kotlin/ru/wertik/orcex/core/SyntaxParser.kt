@@ -114,18 +114,21 @@ internal class SyntaxParser(
         expect<LatexToken.GroupStart>("Expected text group")
         val value = StringBuilder()
         var depth = 1
-        while (depth > 0) {
+        while (true) {
             when (val token = consume()) {
                 is LatexToken.Character -> value.append(token.value)
                 is LatexToken.Whitespace -> value.append(' ')
                 is LatexToken.GroupStart -> { depth++; value.append('{') }
-                is LatexToken.GroupEnd -> if (--depth > 0) value.append('}')
+                is LatexToken.GroupEnd -> if (--depth == 0) return MathNode.Text(value.toString()) else value.append('}')
                 is LatexToken.Command -> value.append('\\').append(token.value)
-                is LatexToken.End -> fail("Unclosed text group")
-                else -> value.append(literal(token))
+                is LatexToken.End -> fail("Unclosed text group", token.index)
+                is LatexToken.OptionalStart -> value.append('[')
+                is LatexToken.OptionalEnd -> value.append(']')
+                is LatexToken.Superscript -> value.append('^')
+                is LatexToken.Subscript -> value.append('_')
+                is LatexToken.Alignment -> value.append('&')
             }
         }
-        return MathNode.Text(value.toString())
     }
 
     private fun matrix(): MathNode {
@@ -136,21 +139,21 @@ internal class SyntaxParser(
         var row = mutableListOf<MathNode>()
         while (true) {
             row += sequenceUntil {
-                it is LatexToken.Alignment || it is LatexToken.Command && (it.value == "\\" || it.value == "end")
+                it is LatexToken.Alignment || it is LatexToken.End || it is LatexToken.Command && (it.value == "\\" || it.value == "end")
             }
-            when (val token = current()) {
-                is LatexToken.Alignment -> consume()
-                is LatexToken.Command -> when (token.value) {
-                    "\\" -> { consume(); rows += row; row = mutableListOf() }
-                    "end" -> {
-                        consume()
-                        if (literalGroup() != name) fail("Environment end mismatch")
-                        rows += row
-                        return MathNode.Matrix(rows, environment)
-                    }
-                    else -> fail("Unexpected environment token")
-                }
-                else -> fail("Unclosed environment $name")
+            if (current() is LatexToken.End) fail("Unclosed environment $name")
+            if (current() is LatexToken.Alignment) {
+                consume()
+                continue
+            }
+            val command = consume() as LatexToken.Command
+            if (command.value == "\\") {
+                rows += row
+                row = mutableListOf()
+            } else {
+                if (literalGroup() != name) fail("Environment end mismatch")
+                rows += row
+                return MathNode.Matrix(rows, environment)
             }
         }
     }
@@ -206,15 +209,6 @@ internal class SyntaxParser(
             else -> SymbolKind.ORDINARY
         },
     )
-
-    private fun literal(token: LatexToken): String = when (token) {
-        is LatexToken.OptionalStart -> "["
-        is LatexToken.OptionalEnd -> "]"
-        is LatexToken.Superscript -> "^"
-        is LatexToken.Subscript -> "_"
-        is LatexToken.Alignment -> "&"
-        else -> ""
-    }
 
     private inline fun <reified T : LatexToken> expect(message: String) {
         if (current() !is T) fail(message)
