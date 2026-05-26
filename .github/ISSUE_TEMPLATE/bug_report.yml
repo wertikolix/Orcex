@@ -1,0 +1,31 @@
+name: Bug report
+description: Report incorrect parsing, layout or rendering.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: formula
+    attributes:
+      label: LaTeX formula
+      description: Provide the smallest expression reproducing the issue.
+      render: latex
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Orcex version
+    validations:
+      required: true

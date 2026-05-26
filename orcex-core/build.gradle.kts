@@ -1,0 +1,34 @@
+plugins {
+    kotlin("multiplatform")
+    id("com.android.kotlin.multiplatform.library")
+    id("maven-publish")
+    id("signing")
+}
+
+kotlin {
+    android {
+        namespace = "ru.wertik.orcex.core"
+        compileSdk = 36
+        minSdk = 21
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        }
+        withHostTest {}
+    }
+    jvm()
+    linuxX64()
+    mingwX64()
+    macosX64()
+    macosArm64()
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
+    sourceSets {
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+    }
+}
+
+apply(from = rootProject.file("gradle/publish-module.gradle.kts"))

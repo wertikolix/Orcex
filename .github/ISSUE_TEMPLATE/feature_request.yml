@@ -1,0 +1,17 @@
+name: Feature request
+description: Propose syntax or platform rendering support.
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Include sample formulas or target platform details.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Lightweight constraints
+      description: Note expected dependencies, binary size or API impact.
