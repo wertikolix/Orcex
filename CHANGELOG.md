@@ -2,6 +2,12 @@
 
 All notable changes to Orcex are documented here.
 
+## 0.2.1 - 2026-05-26
+
+- Render Maxwell equations in differential form through `aligned`, `align`, `align*` and `gathered` environments.
+- Add variant Greek glyphs including `\\varepsilon`, commonly used for permittivity constants.
+- Align equation columns on relation signs and cover the full Maxwell system in tests and visual previews.
+
 ## 0.2.0 - 2026-05-26
 
 - Add multi-integrals, inverse/hyperbolic functions, set relations, arrows, ellipses and floor/ceiling delimiters.

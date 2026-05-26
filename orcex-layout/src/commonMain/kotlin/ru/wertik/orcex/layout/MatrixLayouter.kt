@@ -25,7 +25,12 @@ internal class MatrixLayouter(
             baseline += rowAscents[rowIndex]
             var x = 0f
             row.forEachIndexed { column, cell ->
-                commands += cell.translated(x + (widths[column] - cell.width) / 2f, baseline).commands
+                val alignmentOffset = when {
+                    node.environment != MatrixEnvironment.ALIGNED -> (widths[column] - cell.width) / 2f
+                    column % 2 == 0 -> widths[column] - cell.width
+                    else -> 0f
+                }
+                commands += cell.translated(x + alignmentOffset, baseline).commands
                 x += widths[column] + columnGap
             }
             baseline += rowDescents[rowIndex] + rowGap
@@ -34,6 +39,7 @@ internal class MatrixLayouter(
     }
 
     private fun decorate(content: LayoutBox, environment: MatrixEnvironment, style: MathStyle): LayoutBox = when (environment) {
+        MatrixEnvironment.ALIGNED -> content
         MatrixEnvironment.MATRIX -> content
         MatrixEnvironment.PMATRIX -> decorations.wrap("(", ")", content, style)
         MatrixEnvironment.BMATRIX -> decorations.wrap("[", "]", content, style)

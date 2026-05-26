@@ -68,6 +68,22 @@ class LatexParserTest {
     }
 
     @Test
+    fun parsesMaxwellEquationsInDifferentialForm() {
+        val maxwell = parser.parse(
+            "\\begin{aligned}" +
+                "\\nabla \\cdot \\mathbf{E} &= \\frac{\\rho}{\\varepsilon_0} \\\\ " +
+                "\\nabla \\cdot \\mathbf{B} &= 0 \\\\ " +
+                "\\nabla \\times \\mathbf{E} &= -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\ " +
+                "\\nabla \\times \\mathbf{B} &= \\mu_0 \\mathbf{J} + \\mu_0\\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}" +
+                "\\end{aligned}",
+        )
+        val aligned = assertIs<MathNode.Matrix>(maxwell.onlyChild())
+        assertEquals(MatrixEnvironment.ALIGNED, aligned.environment)
+        assertEquals(4, aligned.rows.size)
+        assertTrue(maxwell.symbolValues().containsAll(listOf("∇", "·", "ρ", "ε", "×", "∂", "μ")))
+    }
+
+    @Test
     fun allowsWhitespaceBeforeCommandArgumentsAndInvisibleDelimiter() {
         val fraction = assertIs<MathNode.Fraction>(parser.parse("\\frac {1} {\\sqrt [3] {x}}").onlyChild())
         assertEquals("1", assertIs<MathNode.Symbol>(fraction.numerator.onlyChild()).value)
@@ -109,7 +125,9 @@ class LatexParserTest {
         assertEquals(null, CommandCatalog.accent("unknown"))
         assertEquals(TextStyle.entries, listOf("mathrm", "mathbf", "mathit", "mathcal", "mathbb").mapNotNull(CommandCatalog::style))
         assertEquals(null, CommandCatalog.style("unknown"))
-        assertEquals(MatrixEnvironment.entries, listOf("matrix", "pmatrix", "bmatrix", "vmatrix", "cases").mapNotNull(CommandCatalog::environment))
+        assertEquals(MatrixEnvironment.entries, listOf("aligned", "matrix", "pmatrix", "bmatrix", "vmatrix", "cases").mapNotNull(CommandCatalog::environment))
+        assertEquals(MatrixEnvironment.ALIGNED, CommandCatalog.environment("align*"))
+        assertEquals(MatrixEnvironment.ALIGNED, CommandCatalog.environment("gathered"))
         assertEquals(null, CommandCatalog.environment("unknown"))
 
         val lenient = LatexParser(ParserConfig(strictCommands = false)).parse("\\unknown").onlyChild()

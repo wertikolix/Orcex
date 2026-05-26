@@ -13,7 +13,7 @@ import ru.wertik.orcex.core.LatexParser
 
 class FormulaPreviewTest {
     @Test
-    fun generatesCalculusPreviewUsingBundledFont() {
+    fun generatesFormulaPreviewUsingBundledFont() {
         val fontFile = listOf(
             File("orcex-font-stix2-android/src/main/assets/orcex/fonts/STIXTwoMath-Regular.ttf"),
             File("../orcex-font-stix2-android/src/main/assets/orcex/fonts/STIXTwoMath-Regular.ttf"),
@@ -29,6 +29,7 @@ class FormulaPreviewTest {
             "\\int x \\ln(x) \\, dx = \\frac{x^2 \\ln(x)}{2} - \\frac{x^2}{4} + C",
             "\\iint_D e^{-(x^2+y^2)} \\, dA = \\pi \\left(1 - e^{-R^2}\\right), \\quad D = \\{x^2+y^2 \\leq R^2\\}",
             "\\sqrt[3]{x+1} + \\left.\\frac{d}{dx}x^2\\right|_0^1",
+            "\\begin{aligned}\\nabla \\cdot \\mathbf{E} &= \\frac{\\rho}{\\varepsilon_0} \\\\ \\nabla \\cdot \\mathbf{B} &= 0 \\\\ \\nabla \\times \\mathbf{E} &= -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\ \\nabla \\times \\mathbf{B} &= \\mu_0 \\mathbf{J} + \\mu_0\\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}\\end{aligned}",
         )
         val layouts = formulas.map { engine.layout(parser.parse(it), MathStyle(fontSize = 40f)) }
         val margin = 44f
@@ -69,7 +70,7 @@ class FormulaPreviewTest {
             top += labelHeight + layout.height + gap
         }
         canvas.dispose()
-        val output = File("build/previews/calculus-preview.png")
+        val output = File("build/previews/formula-preview.png")
         output.parentFile.mkdirs()
         ImageIO.write(image, "png", output)
         assertTrue(output.length() > 0)

@@ -34,6 +34,7 @@ public enum class AccentType { HAT, BAR, VEC, DOT, TILDE }
 public enum class TextStyle { ROMAN, BOLD, ITALIC, CALLIGRAPHIC, BLACKBOARD }
 
 public enum class MatrixEnvironment {
+    ALIGNED,
     MATRIX,
     PMATRIX,
     BMATRIX,

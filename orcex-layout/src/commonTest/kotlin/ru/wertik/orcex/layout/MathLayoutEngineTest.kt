@@ -139,6 +139,22 @@ class MathLayoutEngineTest {
         assertEquals(1.7f, MathSpacing.between(ordinary, operator, ordinary, 10f), 0.001f)
     }
 
+    @Test
+    fun laysOutMaxwellEquationsAlignedOnRelationSigns() {
+        val layout = engine.layout(parser.parse(
+            "\\begin{aligned}" +
+                "\\nabla \\cdot \\mathbf{E} &= \\frac{\\rho}{\\varepsilon_0} \\\\ " +
+                "\\nabla \\cdot \\mathbf{B} &= 0 \\\\ " +
+                "\\nabla \\times \\mathbf{E} &= -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\ " +
+                "\\nabla \\times \\mathbf{B} &= \\mu_0 \\mathbf{J} + \\mu_0\\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}" +
+                "\\end{aligned}",
+        ), MathStyle(fontSize = 32f))
+        val equalsSigns = layout.commands.filterIsInstance<DrawCommand.Text>().filter { it.value == "=" }
+        assertEquals(4, equalsSigns.size)
+        assertTrue(equalsSigns.map { it.x }.distinct().size == 1)
+        assertTrue(layout.height > 32f * 4)
+    }
+
     private object FixedMetrics : MathFontMetrics {
         override fun measure(text: String, style: MathStyle): GlyphMetrics = GlyphMetrics(
             width = text.codePointCount() * style.fontSize * 0.48f,

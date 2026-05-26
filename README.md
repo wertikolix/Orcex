@@ -24,13 +24,13 @@ The parser and layout do not require Android or a bundled font. Apps that alread
 repositories { mavenCentral() }
 
 commonMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-core:0.2.0")
-    implementation("ru.wertik.orcex:orcex-layout:0.2.0")
+    implementation("ru.wertik.orcex:orcex-core:0.2.1")
+    implementation("ru.wertik.orcex:orcex-layout:0.2.1")
 }
 
 androidMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-render-android:0.2.0")
-    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.2.0")
+    implementation("ru.wertik.orcex:orcex-render-android:0.2.1")
+    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.2.1")
 }
 ```
 
@@ -38,9 +38,9 @@ The Maven group is `ru.wertik.orcex` under the verified `ru.wertik` Central name
 
 ## Supported syntax
 
-- Symbols and operators such as `\alpha`, `\sum`, `\int`, `\iint`, `\leq`, `\sin`, `\arcsin`.
+- Symbols and operators such as `\alpha`, `\varepsilon`, `\nabla`, `\sum`, `\int`, `\iint`, `\leq`, `\sin`, `\arcsin`.
 - Superscripts/subscripts, fractions, indexed radicals and scalable delimiters.
-- Accents, text/style commands and `matrix`, `pmatrix`, `bmatrix`, `vmatrix`, `cases` environments.
+- Accents, text/style commands and `matrix`, `pmatrix`, `bmatrix`, `vmatrix`, `cases`, `aligned`/`align` environments.
 - Individually disableable parser modules through `ParserConfig.enabledModules`.
 
 ## Android usage

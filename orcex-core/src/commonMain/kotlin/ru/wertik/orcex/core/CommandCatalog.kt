@@ -3,9 +3,11 @@ package ru.wertik.orcex.core
 internal object CommandCatalog {
     private val symbols = mapOf(
         "alpha" to makeSymbol("α"), "beta" to makeSymbol("β"), "gamma" to makeSymbol("γ"),
-        "delta" to makeSymbol("δ"), "epsilon" to makeSymbol("ϵ"), "theta" to makeSymbol("θ"),
+        "delta" to makeSymbol("δ"), "epsilon" to makeSymbol("ϵ"), "varepsilon" to makeSymbol("ε"),
+        "theta" to makeSymbol("θ"), "vartheta" to makeSymbol("ϑ"),
         "lambda" to makeSymbol("λ"), "mu" to makeSymbol("μ"), "pi" to makeSymbol("π"),
-        "rho" to makeSymbol("ρ"), "sigma" to makeSymbol("σ"), "phi" to makeSymbol("φ"),
+        "rho" to makeSymbol("ρ"), "varrho" to makeSymbol("ϱ"), "sigma" to makeSymbol("σ"),
+        "varsigma" to makeSymbol("ς"), "phi" to makeSymbol("φ"), "varphi" to makeSymbol("ϕ"),
         "omega" to makeSymbol("ω"), "Gamma" to makeSymbol("Γ"), "Delta" to makeSymbol("Δ"),
         "Theta" to makeSymbol("Θ"), "Lambda" to makeSymbol("Λ"), "Sigma" to makeSymbol("Σ"),
         "Phi" to makeSymbol("Φ"), "Omega" to makeSymbol("Ω"), "times" to makeSymbol("×", SymbolKind.BINARY),
@@ -87,6 +89,7 @@ internal object CommandCatalog {
     }
 
     fun environment(name: String): MatrixEnvironment? = when (name) {
+        "aligned", "align", "align*", "gathered" -> MatrixEnvironment.ALIGNED
         "matrix" -> MatrixEnvironment.MATRIX
         "pmatrix" -> MatrixEnvironment.PMATRIX
         "bmatrix" -> MatrixEnvironment.BMATRIX
