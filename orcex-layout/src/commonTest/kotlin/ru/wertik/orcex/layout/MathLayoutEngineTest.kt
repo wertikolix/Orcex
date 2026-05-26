@@ -6,6 +6,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.math.abs
 import ru.wertik.orcex.core.LatexParser
+import ru.wertik.orcex.core.MathNode
 
 class MathLayoutEngineTest {
     private val parser = LatexParser()
@@ -68,6 +69,28 @@ class MathLayoutEngineTest {
     }
 
     @Test
+    fun rendersTypographyRegressionsAtResponsiveSizes() {
+        val examples = listOf(
+            "\\left.\\frac{x^2}{2}\\right|_0^1 = \\frac{1}{2}" to false,
+            "\\begin{aligned}\\nabla \\cdot \\mathbf{E} &= \\frac{\\rho}{\\varepsilon_0} \\\\ \\nabla \\cdot \\mathbf{B} &= 0 \\\\ \\nabla \\times \\mathbf{E} &= -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\ \\nabla \\times \\mathbf{B} &= \\mu_0 \\mathbf{J} + \\mu_0\\,\\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}\\end{aligned}" to false,
+            "e^x = 1 + x + \\frac{x^2}{2} + \\frac{x^3}{6} + \\frac{x^4}{24} + \\frac{x^5}{120} + \\cdots" to true,
+        )
+        listOf(12f, 24f, 48f, 96f).forEach { fontSize ->
+            examples.forEach { (formula, constrained) ->
+                val node = parser.parse(formula)
+                val layout = if (constrained) {
+                    engine.layout(node, MathStyle(fontSize = fontSize), MathLayoutConstraints(fontSize * 12.5f))
+                } else {
+                    engine.layout(node, MathStyle(fontSize = fontSize))
+                }
+                assertTrue(layout.width.isFinite() && layout.height.isFinite())
+                assertTrue(layout.commands.isNotEmpty())
+                if (constrained) assertTrue(layout.height > fontSize)
+            }
+        }
+    }
+
+    @Test
     fun treatsPrefixMinusAsUnaryAndEnlargesDisplayIntegrals() {
         val unary = engine.layout(parser.parse("-x"), MathStyle(fontSize = 40f))
         val binary = engine.layout(parser.parse("x-x"), MathStyle(fontSize = 40f))
@@ -81,16 +104,19 @@ class MathLayoutEngineTest {
     }
 
     @Test
-    fun centersDisplayLimitsAboveAndBelowLargeOperators() {
+    fun stacksSumLimitsButKeepsIntegralLimitsBesideTheOperator() {
         val layout = engine.layout(parser.parse("\\int_0^1 x + \\sum_{i=1}^{n} i"), MathStyle(fontSize = 40f))
         val text = layout.commands.filterIsInstance<DrawCommand.Text>()
         val integral = text.first { it.value == "∫" }
-        val lower = text.first { it.value == "0" }
-        val upper = text.first { it.value == "1" }
-        assertTrue(lower.x < integral.x + integral.style.fontSize)
-        assertTrue(upper.x < integral.x + integral.style.fontSize)
-        assertTrue(upper.baseline < integral.baseline)
-        assertTrue(lower.baseline > integral.baseline)
+        val integralLower = text.first { it.value == "0" }
+        val integralUpper = text.first { it.value == "1" }
+        val sum = text.first { it.value == "∑" }
+        val sumLower = text.first { it.value == "𝑖" }
+        val sumUpper = text.first { it.value == "𝑛" }
+        assertTrue(integralLower.x > integral.x)
+        assertTrue(integralUpper.x > integral.x)
+        assertTrue(sumLower.x < sum.x + sum.style.fontSize)
+        assertTrue(sumUpper.x < sum.x + sum.style.fontSize)
     }
 
     @Test
@@ -154,6 +180,7 @@ class MathLayoutEngineTest {
         assertEquals(1.7f, MathSpacing.between(ordinary, punctuation, ordinary, 10f), 0.001f)
         assertEquals(1.7f, MathSpacing.between(ordinary, operator, ordinary, 10f), 0.001f)
         assertEquals(1.7f, MathSpacing.between(ordinary, ordinary, operator, 10f), 0.001f)
+        assertEquals(1f, MathSpacing.between(null, binary, MathNode.Fraction(ordinary, ordinary), 10f), 0.001f)
     }
 
     @Test
@@ -223,10 +250,12 @@ class MathLayoutEngineTest {
     fun spacesRelationsAndBinariesAroundCompositeAtoms() {
         val relation = engine.layout(parser.parse("x=\\frac{1}{2}"), MathStyle(fontSize = 40f))
         val binary = engine.layout(parser.parse("\\sqrt{x}+y"), MathStyle(fontSize = 40f))
+        val faraday = engine.layout(parser.parse("-\\frac{\\partial B}{\\partial t}"), MathStyle(fontSize = 40f))
         val relationText = relation.commands.filterIsInstance<DrawCommand.Text>()
         val binaryText = binary.commands.filterIsInstance<DrawCommand.Text>()
         assertTrue(relationText.first { it.value == "=" }.x + 40f * 0.48f + 40f * 0.28f <= relation.commands.filterIsInstance<DrawCommand.Line>().first().startX)
         assertTrue(binaryText.first { it.value == "+" }.x > binaryText.first { it.value == "𝑥" }.x)
+        assertTrue(faraday.commands.filterIsInstance<DrawCommand.Line>().first().startX > faraday.commands.filterIsInstance<DrawCommand.Text>().first { it.value == "-" }.x + 40f * 0.48f)
     }
 
     private object FixedMetrics : MathFontMetrics {

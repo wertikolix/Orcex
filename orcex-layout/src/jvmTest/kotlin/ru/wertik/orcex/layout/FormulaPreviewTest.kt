@@ -28,9 +28,9 @@ class FormulaPreviewTest {
             "\\int_{-\\infty}^{\\infty} e^{-x^2} \\, dx = \\sqrt{\\pi}" to Float.POSITIVE_INFINITY,
             "\\int x \\ln(x) \\, dx = \\frac{x^2 \\ln(x)}{2} - \\frac{x^2}{4} + C" to Float.POSITIVE_INFINITY,
             "\\iint_D e^{-(x^2+y^2)} \\, dA = \\pi \\left(1 - e^{-R^2}\\right), \\quad D = \\{x^2+y^2 \\leq R^2\\}" to Float.POSITIVE_INFINITY,
-            "\\left.x^2\\right|_0^1 = 1" to Float.POSITIVE_INFINITY,
+            "\\left.\\frac{x^2}{2}\\right|_0^1 = \\frac{1}{2}" to Float.POSITIVE_INFINITY,
             "\\begin{aligned}\\nabla \\cdot \\mathbf{E} &= \\frac{\\rho}{\\varepsilon_0} \\\\ \\nabla \\cdot \\mathbf{B} &= 0 \\\\ \\nabla \\times \\mathbf{E} &= -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\ \\nabla \\times \\mathbf{B} &= \\mu_0 \\mathbf{J} + \\mu_0\\,\\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}\\end{aligned}" to Float.POSITIVE_INFINITY,
-            "\\iint_D e^{-(x^2+y^2)} \\, dA = \\pi \\left(1 - e^{-R^2}\\right) + \\frac{\\rho}{\\varepsilon_0} + \\sqrt{x^2+y^2}" to 520f,
+            "e^x = 1 + x + \\frac{x^2}{2} + \\frac{x^3}{6} + \\frac{x^4}{24} + \\frac{x^5}{120} + \\cdots" to 500f,
         )
         val layouts = formulas.map { (formula, maxWidth) ->
             if (maxWidth.isFinite()) engine.layout(parser.parse(formula), MathStyle(fontSize = 40f), MathLayoutConstraints(maxWidth))

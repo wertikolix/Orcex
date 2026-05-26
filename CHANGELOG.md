@@ -2,6 +2,12 @@
 
 All notable changes to Orcex are documented here.
 
+## 0.3.1 - 2026-05-26
+
+- Restore side-positioned limits for integral operators while retaining stacked limits for summations and products.
+- Separate unary minus from tall fractions so Faraday's law remains unmistakable in rendered Maxwell previews.
+- Replace the wrapping gallery sample with a meaningful Taylor-series expression and tighten multiline vertical rhythm.
+
 ## 0.3.0 - 2026-05-26
 
 - Add a checked-in rendered formula gallery and copy-ready Maxwell usage example to the README.

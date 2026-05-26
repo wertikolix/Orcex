@@ -99,7 +99,7 @@ public class MathLayoutEngine(private val metrics: MathFontMetrics) {
                 end++
             }
         }
-        val gap = style.fontSize * 0.38f
+        val gap = style.fontSize * 0.24f
         val commands = mutableListOf<DrawCommand>()
         var baseline = 0f
         lines.forEachIndexed { index, line ->

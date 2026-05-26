@@ -30,13 +30,13 @@ The parser and layout do not require Android or a bundled font. Apps that alread
 repositories { mavenCentral() }
 
 commonMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-core:0.3.0")
-    implementation("ru.wertik.orcex:orcex-layout:0.3.0")
+    implementation("ru.wertik.orcex:orcex-core:0.3.1")
+    implementation("ru.wertik.orcex:orcex-layout:0.3.1")
 }
 
 androidMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-render-android:0.3.0")
-    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.3.0")
+    implementation("ru.wertik.orcex:orcex-render-android:0.3.1")
+    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.3.1")
 }
 ```
 
@@ -65,7 +65,7 @@ renderer.draw(canvas, layout, x = 24f, y = 24f)
 ### Automatic line breaking
 
 ```kotlin
-val expression = "\\iint_D e^{-(x^2+y^2)} \\, dA = \\pi \\left(1 - e^{-R^2}\\right) + \\frac{\\rho}{\\varepsilon_0}"
+val expression = "e^x = 1 + x + \\frac{x^2}{2} + \\frac{x^3}{6} + \\frac{x^4}{24} + \\frac{x^5}{120} + \\cdots"
 val layout = engine.layout(
     expression,
     fontSize = 40f,

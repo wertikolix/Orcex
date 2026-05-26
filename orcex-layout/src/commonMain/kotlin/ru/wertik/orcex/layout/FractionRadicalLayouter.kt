@@ -8,8 +8,8 @@ internal class FractionRadicalLayouter(private val scope: LayoutScope) {
         val nested = style.script()
         val numerator = scope.box(node.numerator, nested)
         val denominator = scope.box(node.denominator, nested)
-        val padding = style.fontSize * 0.14f
-        val gap = style.fontSize * 0.12f
+        val padding = style.fontSize * 0.12f
+        val gap = style.fontSize * 0.09f
         val thickness = max(1f, style.fontSize * 0.045f)
         val axisY = -style.fontSize * 0.24f
         val width = max(numerator.width, denominator.width) + padding * 2f

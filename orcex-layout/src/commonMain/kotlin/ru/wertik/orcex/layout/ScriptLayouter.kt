@@ -11,7 +11,7 @@ internal class ScriptLayouter(private val scope: LayoutScope) {
         val superscript = node.superscript?.let { scope.box(it, scriptStyle) }
         val subscript = node.subscript?.let { scope.box(it, scriptStyle) }
         val baseNode = node.base as? MathNode.Symbol
-        if (baseNode?.kind == SymbolKind.LARGE_OPERATOR && style.scriptLevel == 0) {
+        if (baseNode?.kind == SymbolKind.LARGE_OPERATOR && baseNode.value in setOf("∑", "∏") && style.scriptLevel == 0) {
             return limits(base, superscript, subscript, style)
         }
         val x = base.width + style.fontSize * 0.04f
