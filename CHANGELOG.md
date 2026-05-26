@@ -2,6 +2,12 @@
 
 All notable changes to Orcex are documented here.
 
+## 0.4.0 - 2026-05-26
+
+- Add a direct Skia/Skiko multiplatform renderer module for desktop JVM and Apple targets.
+- Add Compose Multiplatform adapters for displaying existing `MathLayout` output inside Compose `Canvas` surfaces.
+- Add renderer-level PNG/golden validation so visual previews exercise the real public renderer backend.
+
 ## 0.3.1 - 2026-05-26
 
 - Restore side-positioned limits for integral operators while retaining stacked limits for summations and products.

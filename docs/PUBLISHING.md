@@ -12,6 +12,8 @@ Published entries:
 - `ru.wertik.orcex:orcex-layout` plus platform variants.
 - `ru.wertik.orcex:orcex-render-android`.
 - `ru.wertik.orcex:orcex-font-stix2-android`.
+- `ru.wertik.orcex:orcex-render-skia` plus supported KMP platform variants.
+- `ru.wertik.orcex:orcex-render-compose` plus supported Compose platform variants.
 
 ## Central Portal setup
 

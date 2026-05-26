@@ -22,7 +22,7 @@ jobs:
       - uses: android-actions/setup-android@v4
       - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew --no-daemon check koverVerify koverXmlReport koverHtmlReport :orcex-render-android:lintDebug :orcex-font-stix2-android:lintDebug
+      - run: ./gradlew --no-daemon check koverVerify koverXmlReport koverHtmlReport :orcex-render-android:lintDebug :orcex-font-stix2-android:lintDebug :orcex-render-skia:linuxX64Klib
       - uses: actions/upload-artifact@v7
         with:
           name: coverage-report
@@ -30,7 +30,9 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: formula-previews
-          path: '**/build/previews/*.png'
+          path: |
+            **/build/previews/*.png
+            **/build/skia-test-snapshots/*.png
 
   native-hosts:
     name: Native tests (${{ matrix.os }})
@@ -48,4 +50,6 @@ jobs:
       - uses: android-actions/setup-android@v4
       - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew --no-daemon :orcex-core:allTests :orcex-layout:allTests
+      - run: ./gradlew --no-daemon :orcex-core:allTests :orcex-layout:allTests :orcex-render-compose:allTests
+      - if: runner.os == 'macOS'
+        run: ./gradlew --no-daemon :orcex-render-skia:macosArm64Klib :orcex-render-compose:iosSimulatorArm64Klib

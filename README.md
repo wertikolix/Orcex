@@ -9,7 +9,9 @@ Ultra-lightweight native LaTeX math library for Kotlin Multiplatform under `ru.w
 
 Rendered natively with the bundled STIX Two Math font:
 
-![Orcex formula rendering preview including integrals and Maxwell equations](docs/images/formula-preview.png)
+![Orcex Skia renderer preview including integrals and Maxwell equations](docs/images/formula-preview-skia.png)
+
+The preview above is generated and golden-tested through the public Skia renderer backend.
 
 ## Modules
 
@@ -19,10 +21,12 @@ Rendered natively with the bundled STIX Two Math font:
 | `orcex-layout` | Platform-neutral math layout and draw command plan | `orcex-core` |
 | `orcex-render-android` | Native Android `Canvas`/`Paint` renderer | `orcex-core`, `orcex-layout` |
 | `orcex-font-stix2-android` | Optional bundled STIX Two Math OpenType font | `orcex-render-android` |
+| `orcex-render-skia` | Skia/Skiko renderer for desktop JVM and Apple targets | `orcex-core`, `orcex-layout`, Skiko |
+| `orcex-render-compose` | Compose Multiplatform `Canvas` adapter for existing layouts | `orcex-layout`, Compose UI |
 
 The parser and layout do not require Android or a bundled font. Apps that already provide a math `Typeface` can omit `orcex-font-stix2-android`.
 
-`orcex-core` and `orcex-layout` publish KMP variants for Android, JVM, Linux x64, Windows x64, macOS x64/Arm64 and iOS x64/Arm64/simulator Arm64.
+`orcex-core` and `orcex-layout` publish KMP variants for Android, JVM, Linux x64, Windows x64, macOS x64/Arm64 and iOS x64/Arm64/simulator Arm64. `orcex-render-skia` publishes JVM desktop, Linux x64 Native, macOS Arm64 and iOS variants; Windows desktop renders through its JVM/Skiko variant. Android uses `orcex-render-android` directly or `orcex-render-compose` inside Compose UI. `orcex-render-compose` publishes Android, JVM desktop and modern iOS Arm64/simulator variants.
 
 ## Dependency
 
@@ -30,13 +34,19 @@ The parser and layout do not require Android or a bundled font. Apps that alread
 repositories { mavenCentral() }
 
 commonMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-core:0.3.1")
-    implementation("ru.wertik.orcex:orcex-layout:0.3.1")
+    implementation("ru.wertik.orcex:orcex-core:0.4.0")
+    implementation("ru.wertik.orcex:orcex-layout:0.4.0")
+    implementation("ru.wertik.orcex:orcex-render-compose:0.4.0")
 }
 
 androidMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-render-android:0.3.1")
-    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.3.1")
+    implementation("ru.wertik.orcex:orcex-render-android:0.4.0")
+    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.4.0")
+}
+
+desktopMain.dependencies {
+    implementation("ru.wertik.orcex:orcex-render-skia:0.4.0")
+    runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.148.1") // choose the runtime for your desktop OS/architecture
 }
 ```
 
@@ -90,6 +100,29 @@ val layout = engine.layout(maxwell, fontSize = 40f)
 renderer.draw(canvas, layout, x = 24f, y = 24f)
 ```
 
+## Skia usage
+
+```kotlin
+val typeface = requireNotNull(FontMgr.default.makeFromFile("STIXTwoMath-Regular.ttf"))
+val engine = SkiaLatexEngine(typeface)
+val layout = engine.layout("\\int_0^1 x^2 \\, dx = \\frac{1}{3}", fontSize = 48f)
+val renderer = SkiaMathRenderer(typeface, color = 0xFF111318.toInt())
+renderer.draw(canvas, layout, x = 24f, y = 24f)
+```
+
+`orcex-render-skia` accepts a consumer-provided Skia `Typeface` and `Canvas`; it does not bundle fonts or own a window/surface.
+
+## Compose adapter
+
+```kotlin
+val renderer = rememberComposeMathRenderer(stixTwoMathFamily)
+val engine = remember(renderer) { MathLayoutEngine(renderer) }
+val layout = engine.layout(parser.parse(formula), MathStyle(fontSize = 48f))
+OrcexMath(layout = layout, renderer = renderer, contentDescription = formula)
+```
+
+Use `drawMathLayout(...)` inside an existing Compose `Canvas` when the surrounding UI owns sizing or animation.
+
 ## Font
 
 `orcex-font-stix2-android` bundles `STIXTwoMath-Regular.ttf` version `2.13 b171` from the STIX Fonts project. It is distributed under the SIL Open Font License 1.1; the license text is included in `orcex-font-stix2-android/OFL.txt`.
@@ -106,4 +139,4 @@ The repository is prepared for Maven Central Portal bundle publishing and GitHub
 ./gradlew centralBundleZip
 ```
 
-Tests cover nested formulas, calculus operators, automatic line breaking, whitespace tolerance, module switches, malformed input, responsive geometry, matrix layout, rules, scripts and Unicode mathematical alphabet glyph output. CI enforces complete executable line coverage, writes reports to `build/reports/kover` and uploads a rendered STIX Two Math formula preview sheet.
+Tests cover nested formulas, calculus operators, automatic line breaking, whitespace tolerance, module switches, malformed input, responsive geometry, matrix layout, rules, scripts, Unicode mathematical alphabet glyph output and Skia raster rendering. CI enforces complete executable line coverage for the covered core/layout/Skia backend, runs Compose adapter geometry tests and uploads golden-tested rendered STIX Two Math preview sheets.
