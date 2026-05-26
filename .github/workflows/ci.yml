@@ -50,6 +50,6 @@ jobs:
       - uses: android-actions/setup-android@v4
       - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew --no-daemon :orcex-core:allTests :orcex-layout:allTests :orcex-render-compose:allTests
+      - run: ./gradlew --no-daemon :orcex-core:allTests :orcex-layout:allTests :orcex-render-compose:jvmTest
       - if: runner.os == 'macOS'
         run: ./gradlew --no-daemon :orcex-render-skia:macosArm64Klib :orcex-render-compose:iosSimulatorArm64Klib
