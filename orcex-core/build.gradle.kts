@@ -1,6 +1,7 @@
 plugins {
     kotlin("multiplatform")
     id("com.android.kotlin.multiplatform.library")
+    id("org.jetbrains.kotlinx.kover")
     id("maven-publish")
     id("signing")
 }

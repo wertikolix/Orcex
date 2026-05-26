@@ -22,7 +22,7 @@ public class MathLayoutEngine(private val metrics: MathFontMetrics) {
 
     private fun box(node: MathNode, style: MathStyle): LayoutBox = when (node) {
         is MathNode.Sequence -> sequence(node, style)
-        is MathNode.Symbol -> text(node.value, symbolStyle(node, style))
+        is MathNode.Symbol -> symbol(node, style)
         is MathNode.Text -> text(node.value, style.withVariant(TextStyle.ROMAN))
         is MathNode.Space -> LayoutBox(node.em * style.fontSize, 0f, 0f, emptyList())
         is MathNode.Fraction -> fractions.fraction(node, style)
@@ -40,13 +40,22 @@ public class MathLayoutEngine(private val metrics: MathFontMetrics) {
         return LayoutBox(measure.width, measure.ascent, measure.descent, listOf(DrawCommand.Text(glyphs, 0f, 0f, style)))
     }
 
+    private fun symbol(node: MathNode.Symbol, style: MathStyle): LayoutBox {
+        val sizedStyle = if (node.kind == SymbolKind.LARGE_OPERATOR && style.scriptLevel == 0) {
+            style.withSize(style.fontSize * 1.18f)
+        } else {
+            style
+        }
+        return text(node.value, symbolStyle(node, sizedStyle))
+    }
+
     private fun sequence(node: MathNode.Sequence, style: MathStyle): LayoutBox {
         val commands = mutableListOf<DrawCommand>()
         var x = 0f
         var ascent = 0f
         var descent = 0f
         node.children.forEachIndexed { index, child ->
-            if (index > 0) x += MathSpacing.between(node.children[index - 1], child, style.fontSize)
+            if (index > 0) x += MathSpacing.between(node.children.getOrNull(index - 2), node.children[index - 1], child, style.fontSize)
             val part = box(child, style).translated(x, 0f)
             commands += part.commands
             x += part.width

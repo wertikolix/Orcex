@@ -42,6 +42,62 @@ class MathLayoutEngineTest {
         assertTrue(abs(bracketVisibleCenter - layout.height / 2f) < 0.001f)
     }
 
+    @Test
+    fun rendersProvidedCalculusExamplesAtResponsiveSizes() {
+        val formulas = listOf(
+            "\\int_0^1 x^2 \\, dx = \\frac{1}{3}",
+            "\\int \\frac{1}{\\sqrt{1-x^2}} \\, dx = \\arcsin(x) + C",
+            "\\int_{-\\infty}^{\\infty} e^{-x^2} \\, dx = \\sqrt{\\pi}",
+            "\\int x \\ln(x) \\, dx = \\frac{x^2 \\ln(x)}{2} - \\frac{x^2}{4} + C",
+            "\\iint_D e^{-(x^2+y^2)} \\, dA = \\pi \\left(1 - e^{-R^2}\\right), \\quad D = \\{x^2+y^2 \\leq R^2\\}",
+        )
+        formulas.forEach { formula ->
+            var previous: MathLayout? = null
+            listOf(12f, 24f, 48f, 96f).forEach { fontSize ->
+                val layout = engine.layout(parser.parse(formula), MathStyle(fontSize = fontSize))
+                assertTrue(layout.width.isFinite() && layout.height.isFinite())
+                assertTrue(layout.width > fontSize && layout.height > fontSize)
+                previous?.let {
+                    assertTrue(layout.width > it.width * 1.95f)
+                    assertTrue(layout.height > it.height * 1.95f)
+                }
+                previous = layout
+            }
+        }
+    }
+
+    @Test
+    fun treatsPrefixMinusAsUnaryAndEnlargesDisplayIntegrals() {
+        val unary = engine.layout(parser.parse("-x"), MathStyle(fontSize = 40f))
+        val binary = engine.layout(parser.parse("x-x"), MathStyle(fontSize = 40f))
+        assertEquals(40f * 0.48f * 2, unary.width, 0.001f)
+        assertTrue(binary.width > 40f * 0.48f * 3)
+
+        val integral = engine.layout(parser.parse("\\iint_D"), MathStyle(fontSize = 40f))
+        val sign = integral.commands.filterIsInstance<DrawCommand.Text>().first()
+        assertEquals("∬", sign.value)
+        assertEquals(47.2f, sign.style.fontSize, 0.001f)
+    }
+
+    @Test
+    fun doesNotEmitPhantomGlyphForInvisibleDelimiter() {
+        val layout = engine.layout(parser.parse("\\left.\\frac{d}{dx}\\right|_0^1"))
+        val text = layout.commands.filterIsInstance<DrawCommand.Text>()
+        assertTrue(text.none { it.value.isEmpty() })
+        assertTrue(text.any { it.value == "|" })
+    }
+
+    @Test
+    fun positionsRadicalIndexBeforeTheRootWithoutTrailingPadding() {
+        val plain = engine.layout(parser.parse("\\sqrt{x}"), MathStyle(fontSize = 40f))
+        val indexed = engine.layout(parser.parse("\\sqrt[3]{x}"), MathStyle(fontSize = 40f))
+        val text = indexed.commands.filterIsInstance<DrawCommand.Text>()
+        val index = text.first { it.value == "3" }
+        val root = text.first { it.value == "√" }
+        assertTrue(index.x < root.x)
+        assertTrue(indexed.width - plain.width < 40f * 0.2f)
+    }
+
     private object FixedMetrics : MathFontMetrics {
         override fun measure(text: String, style: MathStyle): GlyphMetrics = GlyphMetrics(
             width = text.codePointCount() * style.fontSize * 0.48f,

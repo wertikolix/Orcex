@@ -10,7 +10,7 @@ internal class DecorationLayouter(private val scope: LayoutScope) {
 
     fun wrap(leftValue: String, rightValue: String, content: LayoutBox, style: MathStyle): LayoutBox {
         val delimiterStyle = style.withSize(max(style.fontSize, content.height * 1.06f))
-        val left = scope.text(leftValue, delimiterStyle)
+        val left = if (leftValue.isEmpty()) LayoutBox(0f, 0f, 0f, emptyList()) else scope.text(leftValue, delimiterStyle)
         val right = if (rightValue.isEmpty()) LayoutBox(0f, 0f, 0f, emptyList()) else scope.text(rightValue, delimiterStyle)
         val leftBaseline = (left.ascent - left.descent) / 2f
         val rightBaseline = (right.ascent - right.descent) / 2f

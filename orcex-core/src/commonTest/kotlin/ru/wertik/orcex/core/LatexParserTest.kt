@@ -58,5 +58,39 @@ class LatexParserTest {
         assertTrue(parsed.children.isNotEmpty())
     }
 
+    @Test
+    fun parsesCalculusOperatorsAndEscapedSetDelimiters() {
+        val inverse = parser.parse("\\int \\frac{1}{\\sqrt{1-x^2}} \\, dx = \\arcsin(x) + C")
+        assertTrue(inverse.symbolValues().containsAll(listOf("∫", "arcsin")))
+
+        val doubleIntegral = parser.parse("\\iint_D e^{-(x^2+y^2)} \\, dA = \\pi, \\quad D = \\{x^2+y^2 \\leq R^2\\}")
+        assertTrue(doubleIntegral.symbolValues().containsAll(listOf("∬", "π", "{", "≤", "}")))
+    }
+
+    @Test
+    fun allowsWhitespaceBeforeCommandArgumentsAndInvisibleDelimiter() {
+        val fraction = assertIs<MathNode.Fraction>(parser.parse("\\frac {1} {\\sqrt [3] {x}}").onlyChild())
+        assertEquals("1", assertIs<MathNode.Symbol>(fraction.numerator.onlyChild()).value)
+        assertEquals("3", assertIs<MathNode.Symbol>(assertNotNull(assertIs<MathNode.Radical>(fraction.denominator.onlyChild()).index).onlyChild()).value)
+
+        val evaluation = assertIs<MathNode.Scripts>(parser.parse("\\left. x \\right|_0^1").onlyChild())
+        val delimited = assertIs<MathNode.Delimited>(evaluation.base)
+        assertEquals("", delimited.left)
+        assertEquals("|", delimited.right)
+    }
+
+    private fun MathNode.symbolValues(): List<String> = when (this) {
+        is MathNode.Sequence -> children.flatMap { it.symbolValues() }
+        is MathNode.Symbol -> listOf(value)
+        is MathNode.Text, is MathNode.Space -> emptyList()
+        is MathNode.Fraction -> numerator.symbolValues() + denominator.symbolValues()
+        is MathNode.Radical -> radicand.symbolValues() + (index?.symbolValues() ?: emptyList())
+        is MathNode.Scripts -> base.symbolValues() + (superscript?.symbolValues() ?: emptyList()) + (subscript?.symbolValues() ?: emptyList())
+        is MathNode.Delimited -> content.symbolValues()
+        is MathNode.Accent -> content.symbolValues()
+        is MathNode.Styled -> content.symbolValues()
+        is MathNode.Matrix -> rows.flatten().flatMap { it.symbolValues() }
+    }
+
     private fun MathNode.onlyChild(): MathNode = assertIs<MathNode.Sequence>(this).children.single()
 }

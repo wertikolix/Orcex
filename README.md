@@ -24,13 +24,13 @@ The parser and layout do not require Android or a bundled font. Apps that alread
 repositories { mavenCentral() }
 
 commonMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-core:0.1.0")
-    implementation("ru.wertik.orcex:orcex-layout:0.1.0")
+    implementation("ru.wertik.orcex:orcex-core:0.2.0")
+    implementation("ru.wertik.orcex:orcex-layout:0.2.0")
 }
 
 androidMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-render-android:0.1.0")
-    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.1.0")
+    implementation("ru.wertik.orcex:orcex-render-android:0.2.0")
+    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.2.0")
 }
 ```
 
@@ -38,7 +38,7 @@ The Maven group is `ru.wertik.orcex` under the verified `ru.wertik` Central name
 
 ## Supported syntax
 
-- Symbols and operators such as `\alpha`, `\sum`, `\int`, `\leq`, `\sin`.
+- Symbols and operators such as `\alpha`, `\sum`, `\int`, `\iint`, `\leq`, `\sin`, `\arcsin`.
 - Superscripts/subscripts, fractions, indexed radicals and scalable delimiters.
 - Accents, text/style commands and `matrix`, `pmatrix`, `bmatrix`, `vmatrix`, `cases` environments.
 - Individually disableable parser modules through `ParserConfig.enabledModules`.
@@ -50,10 +50,10 @@ val typeface = StixTwoMath.load(context)
 val engine = AndroidLatexEngine(typeface)
 val layout = engine.layout("\\frac{\\sum_{i=1}^{n} i^2}{\\sqrt{x+1}}", fontSize = 48f)
 val renderer = CanvasMathRenderer(typeface, color = Color.BLACK)
-renderer.draw(canvas, layout, x = 24f, y = 24f + layout.baseline)
+renderer.draw(canvas, layout, x = 24f, y = 24f)
 ```
 
-`CanvasMathRenderer` draws natively to Android `Canvas`; it does not use `WebView`, JavaScript or HTML.
+`CanvasMathRenderer` draws natively to Android `Canvas`; its `x`/`y` origin is the top-left of the generated layout. Use `layout.baseline` only when aligning the result with surrounding baseline-positioned text.
 
 ## Font
 
@@ -67,7 +67,8 @@ The repository is prepared for Maven Central Portal bundle publishing and GitHub
 
 ```bash
 ./gradlew check :orcex-render-android:lintDebug :orcex-font-stix2-android:lintDebug
+./gradlew koverVerify koverHtmlReport koverXmlReport
 ./gradlew centralBundleZip
 ```
 
-Tests cover nested formulas, module switches, malformed input, matrix layout, rules, scripts and Unicode mathematical alphabet glyph output.
+Tests cover nested formulas, calculus operators, whitespace tolerance, module switches, malformed input, responsive geometry, matrix layout, rules, scripts and Unicode mathematical alphabet glyph output. CI enforces at least 80% line coverage, writes reports to `build/reports/kover` and uploads a rendered STIX Two Math formula preview sheet.

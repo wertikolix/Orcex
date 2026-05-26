@@ -93,20 +93,24 @@ internal class SyntaxParser(
 
     private fun radical(): MathNode {
         requireModule(LatexModule.RADICALS)
+        skipWhitespace()
         val index = if (current() is LatexToken.OptionalStart) optionalArgument() else null
         return MathNode.Radical(argument("radicand"), index)
     }
 
     private fun delimited(): MathNode {
         requireModule(LatexModule.DELIMITERS)
+        skipWhitespace()
         val left = delimiter()
         val content = sequenceUntil { it is LatexToken.Command && it.value == "right" }
         expectCommand("right", "Missing \\right")
+        skipWhitespace()
         return MathNode.Delimited(left, content, delimiter())
     }
 
     private fun text(): MathNode {
         requireModule(LatexModule.TEXT)
+        skipWhitespace()
         expect<LatexToken.GroupStart>("Expected text group")
         val value = StringBuilder()
         var depth = 1
@@ -152,6 +156,7 @@ internal class SyntaxParser(
     }
 
     private fun argument(label: String): MathNode {
+        skipWhitespace()
         if (current() is LatexToken.End) fail("Missing $label")
         return if (current() is LatexToken.GroupStart) {
             consume()
@@ -169,6 +174,7 @@ internal class SyntaxParser(
     }
 
     private fun literalGroup(): String {
+        skipWhitespace()
         expect<LatexToken.GroupStart>("Expected group")
         val value = StringBuilder()
         while (true) {
@@ -182,7 +188,7 @@ internal class SyntaxParser(
     }
 
     private fun delimiter(): String = when (val token = consume()) {
-        is LatexToken.Character -> token.value.toString()
+        is LatexToken.Character -> if (token.value == '.') "" else token.value.toString()
         is LatexToken.OptionalStart -> "["
         is LatexToken.OptionalEnd -> "]"
         is LatexToken.Command -> CommandCatalog.delimiter(token.value) ?: fail("Unsupported delimiter \\${token.value}")
@@ -223,6 +229,10 @@ internal class SyntaxParser(
 
     private fun requireModule(module: LatexModule) {
         if (!config.isEnabled(module)) fail("Module $module is disabled")
+    }
+
+    private fun skipWhitespace() {
+        while (current() is LatexToken.Whitespace) consume()
     }
 
     private fun current(): LatexToken = tokens[position]

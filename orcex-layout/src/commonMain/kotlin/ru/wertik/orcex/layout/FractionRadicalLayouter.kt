@@ -25,15 +25,16 @@ internal class FractionRadicalLayouter(private val scope: LayoutScope) {
         val content = scope.box(node.radicand, style)
         val root = scope.text("√", style.withSize(max(style.fontSize, content.height * 1.04f)))
         val index = node.index?.let { scope.box(it, style.script().script()) }
+        val indexAdvance = (index?.width ?: 0f) * 0.55f
         val thickness = max(1f, style.fontSize * 0.04f)
         val overbarY = -content.ascent - style.fontSize * 0.06f
-        val contentX = root.width - style.fontSize * 0.08f
+        val contentX = indexAdvance + root.width - style.fontSize * 0.08f
         return LayoutBox(
-            contentX + content.width + (index?.width ?: 0f) * 0.45f,
+            contentX + content.width,
             max(root.ascent, content.ascent - overbarY),
             max(root.descent, content.descent),
             buildList {
-                addAll(root.commands)
+                addAll(root.translated(indexAdvance, 0f).commands)
                 addAll(content.translated(contentX, 0f).commands)
                 add(DrawCommand.Line(contentX, overbarY, contentX + content.width, overbarY, thickness))
                 index?.let { addAll(it.translated(0f, -root.ascent * 0.55f).commands) }

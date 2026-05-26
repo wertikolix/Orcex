@@ -22,7 +22,15 @@ jobs:
       - uses: android-actions/setup-android@v4
       - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v6
-      - run: ./gradlew --no-daemon check :orcex-render-android:lintDebug :orcex-font-stix2-android:lintDebug
+      - run: ./gradlew --no-daemon check koverVerify koverXmlReport koverHtmlReport :orcex-render-android:lintDebug :orcex-font-stix2-android:lintDebug
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: build/reports/kover
+      - uses: actions/upload-artifact@v7
+        with:
+          name: formula-previews
+          path: '**/build/previews/*.png'
 
   native-hosts:
     name: Native tests (${{ matrix.os }})

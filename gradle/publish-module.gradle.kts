@@ -67,9 +67,11 @@ extensions.configure<SigningExtension> {
     isRequired = signingKey != null && !project.version.toString().endsWith("-SNAPSHOT")
 }
 
+val releasePublicationRequiresSigning = !version.toString().endsWith("-SNAPSHOT") && providers.gradleProperty("signingKey").orNull == null
+
 tasks.withType(org.gradle.api.publish.maven.tasks.PublishToMavenRepository::class.java).configureEach {
     doFirst {
-        if (!project.version.toString().endsWith("-SNAPSHOT") && providers.gradleProperty("signingKey").orNull == null) {
+        if (releasePublicationRequiresSigning) {
             error("A release publication requires -PsigningKey and -PsigningPassword.")
         }
     }
