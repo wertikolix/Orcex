@@ -5,6 +5,12 @@ Ultra-lightweight native LaTeX math library for Kotlin Multiplatform under `ru.w
 [![CI](https://github.com/wertikolix/Orcex/actions/workflows/ci.yml/badge.svg)](https://github.com/wertikolix/Orcex/actions/workflows/ci.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/ru.wertik.orcex/orcex-core?label=Maven%20Central)](https://central.sonatype.com/artifact/ru.wertik.orcex/orcex-core)
 
+## Preview
+
+Rendered natively with the bundled STIX Two Math font:
+
+![Orcex formula rendering preview including integrals and Maxwell equations](docs/images/formula-preview.png)
+
 ## Modules
 
 | Module | Purpose | Runtime dependencies |
@@ -54,6 +60,20 @@ renderer.draw(canvas, layout, x = 24f, y = 24f)
 ```
 
 `CanvasMathRenderer` draws natively to Android `Canvas`; its `x`/`y` origin is the top-left of the generated layout. Use `layout.baseline` only when aligning the result with surrounding baseline-positioned text.
+
+### Maxwell example
+
+```kotlin
+val maxwell = """\begin{aligned}
+    \nabla \cdot \mathbf{E} &= \frac{\rho}{\varepsilon_0} \\
+    \nabla \cdot \mathbf{B} &= 0 \\
+    \nabla \times \mathbf{E} &= -\frac{\partial \mathbf{B}}{\partial t} \\
+    \nabla \times \mathbf{B} &= \mu_0 \mathbf{J} + \mu_0\varepsilon_0 \frac{\partial \mathbf{E}}{\partial t}
+\end{aligned}""".trimIndent()
+
+val layout = engine.layout(maxwell, fontSize = 40f)
+renderer.draw(canvas, layout, x = 24f, y = 24f)
+```
 
 ## Font
 

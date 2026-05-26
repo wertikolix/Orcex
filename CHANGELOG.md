@@ -2,6 +2,10 @@
 
 All notable changes to Orcex are documented here.
 
+## Unreleased
+
+- Add a checked-in rendered formula gallery and copy-ready Maxwell usage example to the README.
+
 ## 0.2.1 - 2026-05-26
 
 - Render Maxwell equations in differential form through `aligned`, `align`, `align*` and `gathered` environments.
