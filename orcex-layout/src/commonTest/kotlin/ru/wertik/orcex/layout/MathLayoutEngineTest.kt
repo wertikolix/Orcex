@@ -3,6 +3,7 @@ package ru.wertik.orcex.layout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.math.abs
 import ru.wertik.orcex.core.LatexParser
 
 class MathLayoutEngineTest {
@@ -36,6 +37,9 @@ class MathLayoutEngineTest {
         assertEquals("[", text.first().value)
         assertEquals("]", text.last().value)
         assertTrue(layout.height > 45f)
+        val leftBracket = text.first()
+        val bracketVisibleCenter = leftBracket.baseline - leftBracket.style.fontSize * (0.76f - 0.24f) / 2f
+        assertTrue(abs(bracketVisibleCenter - layout.height / 2f) < 0.001f)
     }
 
     private object FixedMetrics : MathFontMetrics {

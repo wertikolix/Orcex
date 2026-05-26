@@ -12,14 +12,18 @@ internal class DecorationLayouter(private val scope: LayoutScope) {
         val delimiterStyle = style.withSize(max(style.fontSize, content.height * 1.06f))
         val left = scope.text(leftValue, delimiterStyle)
         val right = if (rightValue.isEmpty()) LayoutBox(0f, 0f, 0f, emptyList()) else scope.text(rightValue, delimiterStyle)
+        val leftBaseline = (left.ascent - left.descent) / 2f
+        val rightBaseline = (right.ascent - right.descent) / 2f
         val gap = style.fontSize * 0.08f
         val contentX = left.width + gap
         val rightX = contentX + content.width + if (right.width > 0f) gap else 0f
         return LayoutBox(
             rightX + right.width,
-            max(content.ascent, max(left.ascent, right.ascent)),
-            max(content.descent, max(left.descent, right.descent)),
-            left.commands + content.translated(contentX, 0f).commands + right.translated(rightX, 0f).commands,
+            max(content.ascent, max(left.height / 2f, right.height / 2f)),
+            max(content.descent, max(left.height / 2f, right.height / 2f)),
+            left.translated(0f, leftBaseline).commands +
+                content.translated(contentX, 0f).commands +
+                right.translated(rightX, rightBaseline).commands,
         )
     }
 
