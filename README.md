@@ -30,13 +30,13 @@ The parser and layout do not require Android or a bundled font. Apps that alread
 repositories { mavenCentral() }
 
 commonMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-core:0.2.1")
-    implementation("ru.wertik.orcex:orcex-layout:0.2.1")
+    implementation("ru.wertik.orcex:orcex-core:0.3.0")
+    implementation("ru.wertik.orcex:orcex-layout:0.3.0")
 }
 
 androidMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-render-android:0.2.1")
-    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.2.1")
+    implementation("ru.wertik.orcex:orcex-render-android:0.3.0")
+    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.3.0")
 }
 ```
 
@@ -47,6 +47,7 @@ The Maven group is `ru.wertik.orcex` under the verified `ru.wertik` Central name
 - Symbols and operators such as `\alpha`, `\varepsilon`, `\nabla`, `\sum`, `\int`, `\iint`, `\leq`, `\sin`, `\arcsin`.
 - Superscripts/subscripts, fractions, indexed radicals and scalable delimiters.
 - Accents, text/style commands and `matrix`, `pmatrix`, `bmatrix`, `vmatrix`, `cases`, `aligned`/`align` environments.
+- Optional constrained layout with automatic top-level line breaking at mathematical relations and operators.
 - Individually disableable parser modules through `ParserConfig.enabledModules`.
 
 ## Android usage
@@ -61,6 +62,20 @@ renderer.draw(canvas, layout, x = 24f, y = 24f)
 
 `CanvasMathRenderer` draws natively to Android `Canvas`; its `x`/`y` origin is the top-left of the generated layout. Use `layout.baseline` only when aligning the result with surrounding baseline-positioned text.
 
+### Automatic line breaking
+
+```kotlin
+val expression = "\\iint_D e^{-(x^2+y^2)} \\, dA = \\pi \\left(1 - e^{-R^2}\\right) + \\frac{\\rho}{\\varepsilon_0}"
+val layout = engine.layout(
+    expression,
+    fontSize = 40f,
+    constraints = MathLayoutConstraints(maxWidth = availableWidth),
+)
+renderer.draw(canvas, layout, x = 24f, y = 24f)
+```
+
+Line breaking is opt-in, keeps fractions, radicals and aligned equations atomic, and prefers relation signs before additive or multiplicative operators.
+
 ### Maxwell example
 
 ```kotlin
@@ -68,7 +83,7 @@ val maxwell = """\begin{aligned}
     \nabla \cdot \mathbf{E} &= \frac{\rho}{\varepsilon_0} \\
     \nabla \cdot \mathbf{B} &= 0 \\
     \nabla \times \mathbf{E} &= -\frac{\partial \mathbf{B}}{\partial t} \\
-    \nabla \times \mathbf{B} &= \mu_0 \mathbf{J} + \mu_0\varepsilon_0 \frac{\partial \mathbf{E}}{\partial t}
+    \nabla \times \mathbf{B} &= \mu_0 \mathbf{J} + \mu_0\,\varepsilon_0 \frac{\partial \mathbf{E}}{\partial t}
 \end{aligned}""".trimIndent()
 
 val layout = engine.layout(maxwell, fontSize = 40f)
@@ -91,4 +106,4 @@ The repository is prepared for Maven Central Portal bundle publishing and GitHub
 ./gradlew centralBundleZip
 ```
 
-Tests cover nested formulas, calculus operators, whitespace tolerance, module switches, malformed input, responsive geometry, matrix layout, rules, scripts and Unicode mathematical alphabet glyph output. CI enforces complete executable line coverage, writes reports to `build/reports/kover` and uploads a rendered STIX Two Math formula preview sheet.
+Tests cover nested formulas, calculus operators, automatic line breaking, whitespace tolerance, module switches, malformed input, responsive geometry, matrix layout, rules, scripts and Unicode mathematical alphabet glyph output. CI enforces complete executable line coverage, writes reports to `build/reports/kover` and uploads a rendered STIX Two Math formula preview sheet.

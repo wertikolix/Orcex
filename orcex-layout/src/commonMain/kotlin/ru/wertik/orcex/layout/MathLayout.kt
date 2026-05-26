@@ -7,6 +7,10 @@ public data class MathLayout(
     val commands: List<DrawCommand>,
 )
 
+public data class MathLayoutConstraints(
+    val maxWidth: Float,
+)
+
 public sealed interface DrawCommand {
     public data class Text(
         val value: String,

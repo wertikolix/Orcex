@@ -11,12 +11,13 @@ internal class FractionRadicalLayouter(private val scope: LayoutScope) {
         val padding = style.fontSize * 0.14f
         val gap = style.fontSize * 0.12f
         val thickness = max(1f, style.fontSize * 0.045f)
+        val axisY = -style.fontSize * 0.24f
         val width = max(numerator.width, denominator.width) + padding * 2f
-        val numeratorY = -(gap + thickness / 2f + numerator.descent)
-        val denominatorY = gap + thickness / 2f + denominator.ascent
+        val numeratorY = axisY - gap - thickness / 2f - numerator.descent
+        val denominatorY = axisY + gap + thickness / 2f + denominator.ascent
         return LayoutBox(width, -numeratorY + numerator.ascent, denominatorY + denominator.descent, buildList {
             addAll(numerator.translated((width - numerator.width) / 2f, numeratorY).commands)
-            add(DrawCommand.Line(0f, 0f, width, 0f, thickness))
+            add(DrawCommand.Line(0f, axisY, width, axisY, thickness))
             addAll(denominator.translated((width - denominator.width) / 2f, denominatorY).commands)
         })
     }

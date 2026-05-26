@@ -23,15 +23,19 @@ class FormulaPreviewTest {
         val engine = MathLayoutEngine(metrics)
         val parser = LatexParser()
         val formulas = listOf(
-            "\\int_0^1 x^2 \\, dx = \\frac{1}{3}",
-            "\\int \\frac{1}{\\sqrt{1-x^2}} \\, dx = \\arcsin(x) + C",
-            "\\int_{-\\infty}^{\\infty} e^{-x^2} \\, dx = \\sqrt{\\pi}",
-            "\\int x \\ln(x) \\, dx = \\frac{x^2 \\ln(x)}{2} - \\frac{x^2}{4} + C",
-            "\\iint_D e^{-(x^2+y^2)} \\, dA = \\pi \\left(1 - e^{-R^2}\\right), \\quad D = \\{x^2+y^2 \\leq R^2\\}",
-            "\\sqrt[3]{x+1} + \\left.\\frac{d}{dx}x^2\\right|_0^1",
-            "\\begin{aligned}\\nabla \\cdot \\mathbf{E} &= \\frac{\\rho}{\\varepsilon_0} \\\\ \\nabla \\cdot \\mathbf{B} &= 0 \\\\ \\nabla \\times \\mathbf{E} &= -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\ \\nabla \\times \\mathbf{B} &= \\mu_0 \\mathbf{J} + \\mu_0\\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}\\end{aligned}",
+            "\\int_0^1 x^2 \\, dx = \\frac{1}{3}" to Float.POSITIVE_INFINITY,
+            "\\int \\frac{1}{\\sqrt{1-x^2}} \\, dx = \\arcsin(x) + C" to Float.POSITIVE_INFINITY,
+            "\\int_{-\\infty}^{\\infty} e^{-x^2} \\, dx = \\sqrt{\\pi}" to Float.POSITIVE_INFINITY,
+            "\\int x \\ln(x) \\, dx = \\frac{x^2 \\ln(x)}{2} - \\frac{x^2}{4} + C" to Float.POSITIVE_INFINITY,
+            "\\iint_D e^{-(x^2+y^2)} \\, dA = \\pi \\left(1 - e^{-R^2}\\right), \\quad D = \\{x^2+y^2 \\leq R^2\\}" to Float.POSITIVE_INFINITY,
+            "\\left.x^2\\right|_0^1 = 1" to Float.POSITIVE_INFINITY,
+            "\\begin{aligned}\\nabla \\cdot \\mathbf{E} &= \\frac{\\rho}{\\varepsilon_0} \\\\ \\nabla \\cdot \\mathbf{B} &= 0 \\\\ \\nabla \\times \\mathbf{E} &= -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\ \\nabla \\times \\mathbf{B} &= \\mu_0 \\mathbf{J} + \\mu_0\\,\\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}\\end{aligned}" to Float.POSITIVE_INFINITY,
+            "\\iint_D e^{-(x^2+y^2)} \\, dA = \\pi \\left(1 - e^{-R^2}\\right) + \\frac{\\rho}{\\varepsilon_0} + \\sqrt{x^2+y^2}" to 520f,
         )
-        val layouts = formulas.map { engine.layout(parser.parse(it), MathStyle(fontSize = 40f)) }
+        val layouts = formulas.map { (formula, maxWidth) ->
+            if (maxWidth.isFinite()) engine.layout(parser.parse(formula), MathStyle(fontSize = 40f), MathLayoutConstraints(maxWidth))
+            else engine.layout(parser.parse(formula), MathStyle(fontSize = 40f))
+        }
         val margin = 44f
         val gap = 32f
         val labelHeight = 20f

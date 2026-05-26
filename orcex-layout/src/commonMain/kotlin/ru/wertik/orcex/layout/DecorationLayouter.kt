@@ -10,8 +10,8 @@ internal class DecorationLayouter(private val scope: LayoutScope) {
 
     fun wrap(leftValue: String, rightValue: String, content: LayoutBox, style: MathStyle): LayoutBox {
         val delimiterStyle = style.withSize(max(style.fontSize, content.height * 1.06f))
-        val left = if (leftValue.isEmpty()) LayoutBox(0f, 0f, 0f, emptyList()) else scope.text(leftValue, delimiterStyle)
-        val right = if (rightValue.isEmpty()) LayoutBox(0f, 0f, 0f, emptyList()) else scope.text(rightValue, delimiterStyle)
+        val left = delimiter(leftValue, content, delimiterStyle)
+        val right = delimiter(rightValue, content, delimiterStyle)
         val leftBaseline = (left.ascent - left.descent) / 2f
         val rightBaseline = (right.ascent - right.descent) / 2f
         val gap = style.fontSize * 0.08f
@@ -25,6 +25,18 @@ internal class DecorationLayouter(private val scope: LayoutScope) {
                 content.translated(contentX, 0f).commands +
                 right.translated(rightX, rightBaseline).commands,
         )
+    }
+
+    private fun delimiter(value: String, content: LayoutBox, style: MathStyle): LayoutBox = when (value) {
+        "" -> LayoutBox(0f, 0f, 0f, emptyList())
+        "|" -> {
+            val padding = style.fontSize * 0.06f
+            val thickness = max(1f, style.fontSize * 0.045f)
+            val ascent = content.ascent + padding
+            val descent = content.descent + padding
+            LayoutBox(thickness, ascent, descent, listOf(DrawCommand.Line(thickness / 2f, -ascent, thickness / 2f, descent, thickness)))
+        }
+        else -> scope.text(value, style)
     }
 
     fun accent(node: MathNode.Accent, style: MathStyle): LayoutBox {

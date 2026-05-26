@@ -2,6 +2,7 @@ package ru.wertik.orcex.layout
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.math.abs
 import ru.wertik.orcex.core.LatexParser
@@ -80,11 +81,25 @@ class MathLayoutEngineTest {
     }
 
     @Test
+    fun centersDisplayLimitsAboveAndBelowLargeOperators() {
+        val layout = engine.layout(parser.parse("\\int_0^1 x + \\sum_{i=1}^{n} i"), MathStyle(fontSize = 40f))
+        val text = layout.commands.filterIsInstance<DrawCommand.Text>()
+        val integral = text.first { it.value == "∫" }
+        val lower = text.first { it.value == "0" }
+        val upper = text.first { it.value == "1" }
+        assertTrue(lower.x < integral.x + integral.style.fontSize)
+        assertTrue(upper.x < integral.x + integral.style.fontSize)
+        assertTrue(upper.baseline < integral.baseline)
+        assertTrue(lower.baseline > integral.baseline)
+    }
+
+    @Test
     fun doesNotEmitPhantomGlyphForInvisibleDelimiter() {
         val layout = engine.layout(parser.parse("\\left.\\frac{d}{dx}\\right|_0^1"))
         val text = layout.commands.filterIsInstance<DrawCommand.Text>()
         assertTrue(text.none { it.value.isEmpty() })
-        assertTrue(text.any { it.value == "|" })
+        val evaluationBar = layout.commands.filterIsInstance<DrawCommand.Line>().maxBy { it.endY - it.startY }
+        assertTrue(evaluationBar.endY - evaluationBar.startY > 40f)
     }
 
     @Test
@@ -108,7 +123,6 @@ class MathLayoutEngineTest {
         mapOf(
             "matrix" to emptyList(),
             "pmatrix" to listOf("(", ")"),
-            "vmatrix" to listOf("|", "|"),
             "cases" to listOf("{"),
         ).forEach { (name, expectedDelimiters) ->
             val layout = engine.layout(parser.parse("\\begin{$name}x&y\\\\z&w\\end{$name}"))
@@ -116,6 +130,8 @@ class MathLayoutEngineTest {
             assertTrue(expectedDelimiters.all(text::contains))
             assertTrue(layout.width > 0f && layout.height > 0f)
         }
+        val determinant = engine.layout(parser.parse("\\begin{vmatrix}x&y\\\\z&w\\end{vmatrix}"))
+        assertTrue(determinant.commands.filterIsInstance<DrawCommand.Line>().count { it.startX == it.endX } >= 2)
     }
 
     @Test
@@ -137,6 +153,15 @@ class MathLayoutEngineTest {
         assertEquals(2.8f, MathSpacing.between(ordinary, ordinary, relation, 10f), 0.001f)
         assertEquals(1.7f, MathSpacing.between(ordinary, punctuation, ordinary, 10f), 0.001f)
         assertEquals(1.7f, MathSpacing.between(ordinary, operator, ordinary, 10f), 0.001f)
+        assertEquals(1.7f, MathSpacing.between(ordinary, ordinary, operator, 10f), 0.001f)
+    }
+
+    @Test
+    fun keepsFractionAxisAboveTheSurroundingTextBaseline() {
+        val layout = engine.layout(parser.parse("x=\\frac{1}{2}+y"), MathStyle(fontSize = 40f))
+        val bar = layout.commands.filterIsInstance<DrawCommand.Line>().single()
+        val equals = layout.commands.filterIsInstance<DrawCommand.Text>().first { it.value == "=" }
+        assertTrue(bar.startY < equals.baseline - 40f * 0.15f)
     }
 
     @Test
@@ -153,6 +178,55 @@ class MathLayoutEngineTest {
         assertEquals(4, equalsSigns.size)
         assertTrue(equalsSigns.map { it.x }.distinct().size == 1)
         assertTrue(layout.height > 32f * 4)
+    }
+
+    @Test
+    fun automaticallyWrapsLongTopLevelExpressionsAtOperators() {
+        val formula = parser.parse("a+b+c+d+e+f=g+h+i+j")
+        val oneLine = engine.layout(formula, MathStyle(fontSize = 32f))
+        val fitting = engine.layout(formula, MathStyle(fontSize = 32f), MathLayoutConstraints(oneLine.width + 1f))
+        val wrapped = engine.layout(formula, MathStyle(fontSize = 32f), MathLayoutConstraints(maxWidth = 150f))
+        val multiplied = engine.layout(parser.parse("a\\cdot b\\cdot c"), MathStyle(fontSize = 32f), MathLayoutConstraints(maxWidth = 52f))
+        val unbreakable = engine.layout(parser.parse("\\frac{123456789}{123456789}"), MathStyle(fontSize = 32f), MathLayoutConstraints(maxWidth = 20f))
+        assertTrue(oneLine.width > 150f)
+        assertEquals(oneLine, fitting)
+        assertTrue(wrapped.width <= 150f)
+        assertTrue(wrapped.height > oneLine.height * 2f)
+        assertTrue(multiplied.height > 32f)
+        assertTrue(unbreakable.width > 20f)
+        val continuationOperators = wrapped.commands.filterIsInstance<DrawCommand.Text>().filter { it.value in setOf("+", "=") }
+        assertTrue(continuationOperators.any { it.x == 0f })
+    }
+
+    @Test
+    fun wrapsAtRelationsBeforeOperatorsAndKeepsUnaryMinusAttached() {
+        val formula = parser.parse("a+b+c=d-\\frac{e}{f}+g")
+        val wrapped = engine.layout(formula, MathStyle(fontSize = 32f), MathLayoutConstraints(150f))
+        val equals = wrapped.commands.filterIsInstance<DrawCommand.Text>().first { it.value == "=" }
+        val minus = wrapped.commands.filterIsInstance<DrawCommand.Text>().first { it.value == "-" }
+        assertEquals(0f, equals.x)
+        assertTrue(minus.x > equals.x)
+        assertFailsWith<IllegalArgumentException> { engine.layout(formula, MathStyle(), MathLayoutConstraints(0f)) }
+        assertFailsWith<IllegalArgumentException> { engine.layout(formula, MathStyle(), MathLayoutConstraints(Float.NaN)) }
+        assertFailsWith<IllegalArgumentException> { engine.layout(formula, MathStyle(), MathLayoutConstraints(Float.POSITIVE_INFINITY)) }
+    }
+
+    @Test
+    fun preservesAlignedBlocksWhenConstrained() {
+        val formula = parser.parse("\\begin{aligned}a &= b + c \\\\ d &= e + f\\end{aligned}")
+        val unconstrained = engine.layout(formula, MathStyle(fontSize = 32f))
+        val constrained = engine.layout(formula, MathStyle(fontSize = 32f), MathLayoutConstraints(20f))
+        assertEquals(unconstrained, constrained)
+    }
+
+    @Test
+    fun spacesRelationsAndBinariesAroundCompositeAtoms() {
+        val relation = engine.layout(parser.parse("x=\\frac{1}{2}"), MathStyle(fontSize = 40f))
+        val binary = engine.layout(parser.parse("\\sqrt{x}+y"), MathStyle(fontSize = 40f))
+        val relationText = relation.commands.filterIsInstance<DrawCommand.Text>()
+        val binaryText = binary.commands.filterIsInstance<DrawCommand.Text>()
+        assertTrue(relationText.first { it.value == "=" }.x + 40f * 0.48f + 40f * 0.28f <= relation.commands.filterIsInstance<DrawCommand.Line>().first().startX)
+        assertTrue(binaryText.first { it.value == "+" }.x > binaryText.first { it.value == "𝑥" }.x)
     }
 
     private object FixedMetrics : MathFontMetrics {

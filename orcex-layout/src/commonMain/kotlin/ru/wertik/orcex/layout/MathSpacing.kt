@@ -11,6 +11,7 @@ internal object MathSpacing {
             leftKind == SymbolKind.BINARY || rightKind == SymbolKind.BINARY -> em * 0.22f
             leftKind == SymbolKind.RELATION || rightKind == SymbolKind.RELATION -> em * 0.28f
             leftKind == SymbolKind.PUNCTUATION -> em * 0.17f
+            rightKind == SymbolKind.OPERATOR && leftKind == SymbolKind.ORDINARY -> em * 0.17f
             leftKind == SymbolKind.OPERATOR && rightKind == SymbolKind.ORDINARY -> em * 0.17f
             else -> 0f
         }
@@ -31,6 +32,7 @@ internal object MathSpacing {
         is MathNode.Scripts -> kind(node.base)
         is MathNode.Styled -> kind(node.content)
         is MathNode.Sequence -> node.children.singleOrNull()?.let(::kind)
-        else -> null
+        null, is MathNode.Space -> null
+        else -> SymbolKind.ORDINARY
     }
 }

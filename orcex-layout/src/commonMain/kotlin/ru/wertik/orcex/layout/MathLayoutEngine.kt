@@ -15,8 +15,15 @@ public class MathLayoutEngine(private val metrics: MathFontMetrics) {
     private val decorations = DecorationLayouter(scope)
     private val matrices = MatrixLayouter(scope, decorations)
 
-    public fun layout(node: MathNode, style: MathStyle = MathStyle()): MathLayout {
-        val box = box(node, style)
+    public fun layout(node: MathNode, style: MathStyle = MathStyle()): MathLayout = buildLayout(box(node, style))
+
+    public fun layout(node: MathNode, style: MathStyle, constraints: MathLayoutConstraints): MathLayout {
+        require(constraints.maxWidth.isFinite() && constraints.maxWidth > 0f) { "maxWidth must be finite and positive" }
+        val box = if (node is MathNode.Sequence) wrappedSequence(node, style, constraints.maxWidth) else box(node, style)
+        return buildLayout(box)
+    }
+
+    private fun buildLayout(box: LayoutBox): MathLayout {
         return MathLayout(box.width, box.height, box.ascent, box.translated(0f, box.ascent).commands)
     }
 
@@ -64,6 +71,77 @@ public class MathLayoutEngine(private val metrics: MathFontMetrics) {
         }
         return LayoutBox(x, ascent, descent, commands)
     }
+
+    private fun wrappedSequence(node: MathNode.Sequence, style: MathStyle, maxWidth: Float): LayoutBox {
+        val whole = sequence(node, style)
+        if (whole.width <= maxWidth || node.children.size < 2) return whole
+        val lines = mutableListOf<LayoutBox>()
+        var start = 0
+        while (start < node.children.size) {
+            var end = start + 1
+            val breaks = mutableListOf<BreakPoint>()
+            while (end <= node.children.size) {
+                if (end > start + 1) breakPointBefore(node.children, end - 1)?.let(breaks::add)
+                val candidate = sequence(MathNode.Sequence(node.children.subList(start, end)), style)
+                if (candidate.width > maxWidth && end > start + 1) {
+                    val split = preferredBreak(node.children, start, breaks, style, maxWidth)
+                    if (split != null) {
+                        lines += sequence(MathNode.Sequence(node.children.subList(start, split)), style)
+                        start = split
+                        break
+                    }
+                }
+                if (end == node.children.size) {
+                    lines += candidate
+                    start = end
+                    break
+                }
+                end++
+            }
+        }
+        val gap = style.fontSize * 0.38f
+        val commands = mutableListOf<DrawCommand>()
+        var baseline = 0f
+        lines.forEachIndexed { index, line ->
+            if (index > 0) baseline += lines[index - 1].descent + gap + line.ascent
+            commands += line.translated(0f, baseline).commands
+        }
+        return LayoutBox(
+            width = lines.maxOf { it.width },
+            ascent = lines.first().ascent,
+            descent = baseline + lines.last().descent,
+            commands = commands,
+        )
+    }
+
+    private fun preferredBreak(children: List<MathNode>, start: Int, breaks: List<BreakPoint>, style: MathStyle, maxWidth: Float): Int? {
+        val preferred = breaks.minWithOrNull(compareBy<BreakPoint> { it.penalty }.thenByDescending { it.index }) ?: return null
+        if (preferred.penalty != 0) return preferred.index
+        val relationWidth = sequence(MathNode.Sequence(children.subList(start, preferred.index)), style).width
+        val laterOperator = breaks.filter { it.penalty > 0 }.maxByOrNull { it.index }
+        return if (laterOperator != null && relationWidth < maxWidth * 0.65f) laterOperator.index else preferred.index
+    }
+
+    private fun breakPointBefore(children: List<MathNode>, index: Int): BreakPoint? {
+        val node = children[index] as? MathNode.Symbol ?: return null
+        return when (node.kind) {
+            SymbolKind.RELATION -> BreakPoint(index, 0)
+            SymbolKind.BINARY -> if (isUnaryBinary(children, index)) null else BreakPoint(index, binaryPenalty(node.value))
+            else -> null
+        }
+    }
+
+    private fun binaryPenalty(value: String): Int = when (value) {
+        "+", "-", "−", "±", "∓" -> 1
+        else -> 2
+    }
+
+    private fun isUnaryBinary(children: List<MathNode>, index: Int): Boolean {
+        if (index == 0) return true
+        return (children[index - 1] as? MathNode.Symbol)?.kind in setOf(SymbolKind.OPEN, SymbolKind.BINARY, SymbolKind.RELATION)
+    }
+
+    private data class BreakPoint(val index: Int, val penalty: Int)
 
     private fun symbolStyle(node: MathNode.Symbol, style: MathStyle): MathStyle =
         if (style.variant == null && node.kind == SymbolKind.ORDINARY && node.value.firstOrNull()?.isLetter() == true) {

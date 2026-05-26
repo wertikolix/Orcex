@@ -2,9 +2,12 @@
 
 All notable changes to Orcex are documented here.
 
-## Unreleased
+## 0.3.0 - 2026-05-26
 
 - Add a checked-in rendered formula gallery and copy-ready Maxwell usage example to the README.
+- Move fraction rules onto a math axis, stretch evaluation bars and tighten operator spacing for cleaner native typography.
+- Center display-style limits above and below integral and summation operators.
+- Add opt-in automatic line breaking with width constraints, semantic break priorities and preserved aligned blocks.
 
 ## 0.2.1 - 2026-05-26
 
