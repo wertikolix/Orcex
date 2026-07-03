@@ -19,7 +19,7 @@ public class CanvasMathRenderer(
             when (command) {
                 is DrawCommand.Text -> canvas.drawText(command.value, x + command.x, y + command.baseline, textPaint(command.style))
                 is DrawCommand.Line -> {
-                    rulePaint.color = color
+                    rulePaint.color = command.color ?: color
                     rulePaint.strokeWidth = command.thickness
                     canvas.drawLine(x + command.startX, y + command.startY, x + command.endX, y + command.endY, rulePaint)
                 }
@@ -29,7 +29,7 @@ public class CanvasMathRenderer(
 
     private fun textPaint(style: MathStyle): Paint {
         val paint = paints.getOrPut(style) { createMathPaint(typeface, style) }
-        paint.color = color
+        paint.color = style.color ?: color
         return paint
     }
 }

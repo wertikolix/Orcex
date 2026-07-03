@@ -25,5 +25,7 @@ public sealed interface DrawCommand {
         val endX: Float,
         val endY: Float,
         val thickness: Float,
+        /** Explicit ARGB color for this rule, or `null` to inherit the renderer color. */
+        val color: Int? = null,
     ) : DrawCommand
 }

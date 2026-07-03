@@ -38,6 +38,8 @@ internal object MathSpacing {
         is MathNode.Symbol -> node.kind
         is MathNode.Scripts -> kind(node.base)
         is MathNode.Styled -> kind(node.content)
+        is MathNode.Colored -> kind(node.content)
+        is MathNode.Stacked -> kind(node.base)
         is MathNode.Sequence -> node.children.singleOrNull()?.let(::kind)
         null, is MathNode.Space -> null
         else -> SymbolKind.ORDINARY

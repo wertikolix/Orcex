@@ -29,6 +29,14 @@ internal class ScriptLayouter(private val scope: LayoutScope) {
         )
     }
 
+    fun stacked(node: MathNode.Stacked, style: MathStyle): LayoutBox {
+        val base = scope.box(node.base, style)
+        val scriptStyle = style.script()
+        val above = node.above?.let { scope.box(it, scriptStyle) }
+        val below = node.below?.let { scope.box(it, scriptStyle) }
+        return limits(base, above, below, style)
+    }
+
     private fun limits(base: LayoutBox, superscript: LayoutBox?, subscript: LayoutBox?, style: MathStyle): LayoutBox {
         val gap = style.fontSize * 0.1f
         val width = max(base.width, max(superscript?.width ?: 0f, subscript?.width ?: 0f))

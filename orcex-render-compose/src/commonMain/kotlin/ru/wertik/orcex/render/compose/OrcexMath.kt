@@ -39,11 +39,12 @@ public fun DrawScope.drawMathLayout(
     layout.commands.forEach { command ->
         when (command) {
             is DrawCommand.Text -> {
-                val textLayout = renderer.textLayout(command.value, command.style, color)
+                val textColor = command.style.color?.let { Color(it) } ?: color
+                val textLayout = renderer.textLayout(command.value, command.style, textColor)
                 drawText(textLayout, topLeft = Offset(origin.x + command.x, origin.y + composeTextTop(command.baseline, textLayout.firstBaseline)))
             }
             is DrawCommand.Line -> drawLine(
-                color = color,
+                color = command.color?.let { Color(it) } ?: color,
                 start = Offset(origin.x + command.startX, origin.y + command.startY),
                 end = Offset(origin.x + command.endX, origin.y + command.endY),
                 strokeWidth = command.thickness,

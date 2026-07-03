@@ -82,6 +82,11 @@ internal class SyntaxParser(
             "left" -> delimited()
             "text" -> text()
             "begin" -> matrix()
+            "textcolor" -> colored()
+            "color" -> colorDeclaration()
+            "boxed" -> boxed()
+            "overset" -> stacked(above = true)
+            "underset" -> stacked(above = false)
             else -> if (config.strictCommands) fail("Unsupported command \\$name") else MathNode.Symbol("\\$name")
         }
     }
@@ -89,6 +94,48 @@ internal class SyntaxParser(
     private fun fraction(): MathNode {
         requireModule(LatexModule.FRACTIONS)
         return MathNode.Fraction(argument("numerator"), argument("denominator"))
+    }
+
+    private fun colored(): MathNode {
+        requireModule(LatexModule.STYLING)
+        return MathNode.Colored(colorArgument(), argument("textcolor content"))
+    }
+
+    private fun colorDeclaration(): MathNode {
+        requireModule(LatexModule.STYLING)
+        val color = colorArgument()
+        // `\color` is a declaration: it applies to the remainder of the enclosing
+        // group, matrix cell, or delimited body.
+        val content = sequenceUntil { token ->
+            token is LatexToken.GroupEnd ||
+                token is LatexToken.End ||
+                token is LatexToken.Alignment ||
+                (token is LatexToken.Command && (token.value == "\\" || token.value == "end" || token.value == "right"))
+        }
+        return MathNode.Colored(color, content)
+    }
+
+    private fun colorArgument(): Int {
+        skipWhitespace()
+        val index = current().index
+        val value = literalGroup().trim()
+        return LatexColors.parse(value) ?: fail("Unsupported color $value", index)
+    }
+
+    private fun boxed(): MathNode {
+        requireModule(LatexModule.STYLING)
+        return MathNode.Boxed(argument("boxed content"))
+    }
+
+    private fun stacked(above: Boolean): MathNode {
+        requireModule(LatexModule.SCRIPTS)
+        val annotation = argument(if (above) "overset annotation" else "underset annotation")
+        val base = argument(if (above) "overset base" else "underset base")
+        return if (above) {
+            MathNode.Stacked(base = base, above = annotation)
+        } else {
+            MathNode.Stacked(base = base, below = annotation)
+        }
     }
 
     private fun radical(): MathNode {

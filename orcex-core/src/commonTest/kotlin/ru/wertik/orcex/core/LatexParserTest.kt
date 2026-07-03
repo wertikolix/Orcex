@@ -179,6 +179,9 @@ class LatexParserTest {
         is MathNode.Delimited -> content.symbolValues()
         is MathNode.Accent -> content.symbolValues()
         is MathNode.Styled -> content.symbolValues()
+        is MathNode.Colored -> content.symbolValues()
+        is MathNode.Boxed -> content.symbolValues()
+        is MathNode.Stacked -> base.symbolValues() + (above?.symbolValues() ?: emptyList()) + (below?.symbolValues() ?: emptyList())
         is MathNode.Matrix -> rows.flatten().flatMap { it.symbolValues() }
     }
 

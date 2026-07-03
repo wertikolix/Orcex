@@ -20,11 +20,11 @@ public class SkiaMathRenderer(
         layout.commands.forEach { command ->
             when (command) {
                 is DrawCommand.Text -> {
-                    textPaint.color = color
+                    textPaint.color = command.style.color ?: color
                     canvas.drawString(command.value, x + command.x, y + command.baseline, font(command.style), textPaint)
                 }
                 is DrawCommand.Line -> {
-                    rulePaint.color = color
+                    rulePaint.color = command.color ?: color
                     rulePaint.strokeWidth = command.thickness
                     canvas.drawLine(x + command.startX, y + command.startY, x + command.endX, y + command.endY, rulePaint)
                 }

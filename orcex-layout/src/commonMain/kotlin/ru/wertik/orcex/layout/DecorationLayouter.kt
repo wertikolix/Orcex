@@ -34,9 +34,30 @@ internal class DecorationLayouter(private val scope: LayoutScope) {
             val thickness = max(1f, style.fontSize * 0.045f)
             val ascent = content.ascent + padding
             val descent = content.descent + padding
-            LayoutBox(thickness, ascent, descent, listOf(DrawCommand.Line(thickness / 2f, -ascent, thickness / 2f, descent, thickness)))
+            LayoutBox(thickness, ascent, descent, listOf(DrawCommand.Line(thickness / 2f, -ascent, thickness / 2f, descent, thickness, style.color)))
         }
         else -> scope.text(value, style)
+    }
+
+    fun boxed(node: MathNode.Boxed, style: MathStyle): LayoutBox {
+        val content = scope.box(node.content, style)
+        val padding = style.fontSize * 0.18f
+        val thickness = max(1f, style.fontSize * 0.045f)
+        val inset = padding + thickness
+        val width = content.width + inset * 2f
+        val ascent = content.ascent + inset
+        val descent = content.descent + inset
+        val top = -ascent + thickness / 2f
+        val bottom = descent - thickness / 2f
+        val left = thickness / 2f
+        val right = width - thickness / 2f
+        return LayoutBox(width, ascent, descent, buildList {
+            addAll(content.translated(inset, 0f).commands)
+            add(DrawCommand.Line(left, top, right, top, thickness, style.color))
+            add(DrawCommand.Line(left, bottom, right, bottom, thickness, style.color))
+            add(DrawCommand.Line(left, top, left, bottom, thickness, style.color))
+            add(DrawCommand.Line(right, top, right, bottom, thickness, style.color))
+        })
     }
 
     fun accent(node: MathNode.Accent, style: MathStyle): LayoutBox {
@@ -53,7 +74,7 @@ internal class DecorationLayouter(private val scope: LayoutScope) {
         if (mark == null) {
             val thickness = max(1f, style.fontSize * 0.04f)
             return LayoutBox(content.width, content.ascent + gap + thickness, content.descent,
-                content.commands + DrawCommand.Line(0f, y, content.width, y, thickness))
+                content.commands + DrawCommand.Line(0f, y, content.width, y, thickness, style.color))
         }
         val accent = scope.text(mark, style.script())
         return LayoutBox(content.width, content.ascent + accent.height + gap, content.descent,

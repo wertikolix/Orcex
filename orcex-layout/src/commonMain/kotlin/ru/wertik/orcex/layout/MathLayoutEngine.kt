@@ -38,6 +38,9 @@ public class MathLayoutEngine(private val metrics: MathFontMetrics) {
         is MathNode.Delimited -> decorations.delimited(node, style)
         is MathNode.Accent -> decorations.accent(node, style)
         is MathNode.Styled -> box(node.content, style.withVariant(node.style))
+        is MathNode.Colored -> box(node.content, style.withColor(node.color))
+        is MathNode.Boxed -> decorations.boxed(node, style)
+        is MathNode.Stacked -> scripts.stacked(node, style)
         is MathNode.Matrix -> matrices.layout(node, style)
     }
 

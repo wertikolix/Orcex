@@ -26,7 +26,7 @@ The preview above is generated and golden-tested through the public Skia rendere
 
 The parser and layout do not require Android or a bundled font. Apps that already provide a math `Typeface` can omit `orcex-font-stix2-android`.
 
-`orcex-core` and `orcex-layout` publish KMP variants for Android, JVM, Linux x64, Windows x64, macOS x64/Arm64 and iOS x64/Arm64/simulator Arm64. `orcex-render-skia` publishes JVM desktop, Linux x64 Native, macOS Arm64 and iOS variants; Windows desktop renders through its JVM/Skiko variant. Android uses `orcex-render-android` directly or `orcex-render-compose` inside Compose UI. `orcex-render-compose` publishes Android, JVM desktop and modern iOS Arm64/simulator variants.
+`orcex-core` and `orcex-layout` publish KMP variants for Android, JVM, Linux x64, Windows x64, macOS x64/Arm64, iOS x64/Arm64/simulator Arm64 and wasmJs. `orcex-render-skia` publishes JVM desktop, Linux x64 Native, macOS Arm64 and iOS variants; Windows desktop renders through its JVM/Skiko variant. Android uses `orcex-render-android` directly or `orcex-render-compose` inside Compose UI. `orcex-render-compose` publishes Android, JVM desktop, modern iOS Arm64/simulator and wasmJs variants.
 
 ## Dependency
 
@@ -34,18 +34,18 @@ The parser and layout do not require Android or a bundled font. Apps that alread
 repositories { mavenCentral() }
 
 commonMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-core:0.4.0")
-    implementation("ru.wertik.orcex:orcex-layout:0.4.0")
-    implementation("ru.wertik.orcex:orcex-render-compose:0.4.0")
+    implementation("ru.wertik.orcex:orcex-core:0.5.0")
+    implementation("ru.wertik.orcex:orcex-layout:0.5.0")
+    implementation("ru.wertik.orcex:orcex-render-compose:0.5.0")
 }
 
 androidMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-render-android:0.4.0")
-    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.4.0")
+    implementation("ru.wertik.orcex:orcex-render-android:0.5.0")
+    implementation("ru.wertik.orcex:orcex-font-stix2-android:0.5.0")
 }
 
 desktopMain.dependencies {
-    implementation("ru.wertik.orcex:orcex-render-skia:0.4.0")
+    implementation("ru.wertik.orcex:orcex-render-skia:0.5.0")
     runtimeOnly("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.148.1") // choose the runtime for your desktop OS/architecture
 }
 ```
@@ -57,6 +57,8 @@ The Maven group is `ru.wertik.orcex` under the verified `ru.wertik` Central name
 - Symbols and operators such as `\alpha`, `\varepsilon`, `\nabla`, `\sum`, `\int`, `\iint`, `\leq`, `\sin`, `\arcsin`.
 - Superscripts/subscripts, fractions, indexed radicals and scalable delimiters.
 - Accents, text/style commands and `matrix`, `pmatrix`, `bmatrix`, `vmatrix`, `cases`, `aligned`/`align` environments.
+- Colors via `\textcolor{red}{...}` / `\color{#FF8800}` (xcolor base names plus `#RGB`/`#RRGGBB`/`#AARRGGBB`), framed content via `\boxed{...}`.
+- Stacked annotations via `\overset{!}{=}` and `\underset{n \to \infty}{\lim}`.
 - Optional constrained layout with automatic top-level line breaking at mathematical relations and operators.
 - Individually disableable parser modules through `ParserConfig.enabledModules`.
 

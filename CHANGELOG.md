@@ -2,6 +2,13 @@
 
 All notable changes to Orcex are documented here.
 
+## 0.5.0 - 2026-05-27
+
+- Add color support: `\textcolor{color}{content}` and the `\color{color}` declaration produce `MathNode.Colored`; colors accept the xcolor base names plus `#RGB`/`#RRGGBB`/`#AARRGGBB` hex forms. Colors propagate through `MathStyle.color` into `DrawCommand.Text` and the new `DrawCommand.Line.color`, with renderer fallback for uncolored content in all three backends.
+- Add `\boxed{content}` framing content with rectangular rules that follow the subtree color.
+- Add `\overset{above}{base}` and `\underset{below}{base}` stacked annotations reusing the display-limits layout.
+- Publish wasmJs variants of `orcex-core`, `orcex-layout` and `orcex-render-compose`.
+
 ## 0.4.0 - 2026-05-26
 
 - Add a direct Skia/Skiko multiplatform renderer module for desktop JVM and Apple targets.

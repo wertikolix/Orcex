@@ -20,6 +20,15 @@ kotlin {
     jvm()
     iosArm64()
     iosSimulatorArm64()
+    wasmJs {
+        browser {
+            testTask {
+                // Browser-based wasm tests require a managed browser; klib compilation
+                // is verified in CI instead.
+                enabled = false
+            }
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {

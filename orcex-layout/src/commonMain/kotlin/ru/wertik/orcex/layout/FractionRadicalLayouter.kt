@@ -17,7 +17,7 @@ internal class FractionRadicalLayouter(private val scope: LayoutScope) {
         val denominatorY = axisY + gap + thickness / 2f + denominator.ascent
         return LayoutBox(width, -numeratorY + numerator.ascent, denominatorY + denominator.descent, buildList {
             addAll(numerator.translated((width - numerator.width) / 2f, numeratorY).commands)
-            add(DrawCommand.Line(0f, axisY, width, axisY, thickness))
+            add(DrawCommand.Line(0f, axisY, width, axisY, thickness, style.color))
             addAll(denominator.translated((width - denominator.width) / 2f, denominatorY).commands)
         })
     }
@@ -37,7 +37,7 @@ internal class FractionRadicalLayouter(private val scope: LayoutScope) {
             buildList {
                 addAll(root.translated(indexAdvance, 0f).commands)
                 addAll(content.translated(contentX, 0f).commands)
-                add(DrawCommand.Line(contentX, overbarY, contentX + content.width, overbarY, thickness))
+                add(DrawCommand.Line(contentX, overbarY, contentX + content.width, overbarY, thickness, style.color))
                 index?.let { addAll(it.translated(0f, -root.ascent * 0.55f).commands) }
             },
         )

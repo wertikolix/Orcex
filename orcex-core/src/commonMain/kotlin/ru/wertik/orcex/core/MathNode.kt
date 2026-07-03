@@ -16,6 +16,21 @@ public sealed interface MathNode {
     public data class Accent(val accent: AccentType, val content: MathNode) : MathNode
     public data class Styled(val style: TextStyle, val content: MathNode) : MathNode
     public data class Matrix(val rows: List<List<MathNode>>, val environment: MatrixEnvironment) : MathNode
+
+    /** Content rendered in an explicit ARGB [color], produced by `\textcolor` and `\color`. */
+    public data class Colored(val color: Int, val content: MathNode) : MathNode
+
+    /** Content framed by a rectangular rule, produced by `\boxed`. */
+    public data class Boxed(val content: MathNode) : MathNode
+
+    /**
+     * Content stacked directly above and/or below a base, produced by `\overset`/`\underset`.
+     */
+    public data class Stacked(
+        val base: MathNode,
+        val above: MathNode? = null,
+        val below: MathNode? = null,
+    ) : MathNode
 }
 
 public enum class SymbolKind {
