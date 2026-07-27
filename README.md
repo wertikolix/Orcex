@@ -54,13 +54,50 @@ The Maven group is `ru.wertik.orcex` under the verified `ru.wertik` Central name
 
 ## Supported syntax
 
-- Symbols and operators such as `\alpha`, `\varepsilon`, `\nabla`, `\sum`, `\int`, `\iint`, `\leq`, `\sin`, `\arcsin`.
-- Superscripts/subscripts, fractions, indexed radicals and scalable delimiters.
-- Accents, text/style commands and `matrix`, `pmatrix`, `bmatrix`, `vmatrix`, `cases`, `aligned`/`align` environments.
+- The full Greek alphabet in both cases, including the `\var` forms.
+- Relations (`\leq`, `\sim`, `\cong`, `\propto`, `\prec`, `\parallel`, `\models`, `\subsetneq`, …), binary
+  operators (`\cup`, `\setminus`, `\oplus`, `\wedge`, `\star`, `\ltimes`, …) and negation with `\not`.
+- Arrows: `\to`, `\mapsto`, `\Rightarrow`, `\iff`, `\longleftrightarrow`, `\hookrightarrow`,
+  `\rightleftharpoons`, the diagonal and vertical families.
+- Large operators `\sum`, `\prod`, `\coprod`, `\int`…`\iiiint`, `\oint`, `\bigcup`, `\bigoplus`,
+  `\bigvee`, `\bigsqcup`, and named functions from `\sin` to `\limsup`, `\ker`, `\Pr`,
+  plus `\operatorname{sgn}` for anything else.
+- Symbols such as `\infty`, `\nabla`, `\emptyset`, `\aleph`, `\hbar`, `\ell`, `\Re`, `\angle`,
+  `\therefore`, `\square`, the card suits and `\vdots`/`\ddots`.
+- Superscripts/subscripts, fractions (`\frac`, `\cfrac`, `\binom`, `\atop`), indexed radicals,
+  and delimiters that scale to their content — `\left`/`\right`/`\middle`, `\lvert`, `\lVert`,
+  `\langle`, `\lfloor`, `\lceil`, `\llbracket`, with the `\big`…`\Bigg` prefixes accepted.
+- Accents `\hat`, `\widehat`, `\bar`, `\overline`, `\underline`, `\vec`, `\overrightarrow`,
+  `\overleftarrow`, `\dot`, `\ddot`, `\dddot`, `\tilde`, `\acute`, `\grave`, `\breve`, `\check`,
+  `\mathring`.
+- Fonts `\mathrm`, `\mathbf`, `\mathit`, `\mathcal`, `\mathbb`, `\mathsf`, `\mathtt`, `\mathfrak`,
+  `\boldsymbol`, and the `\text`/`\textbf`/`\textit`/`\texttt` family.
+- Environments `matrix`, `pmatrix`, `bmatrix`, `vmatrix`, `Bmatrix`, `Vmatrix`, `smallmatrix`,
+  `array`, `cases`, `aligned`/`align`/`alignat`, `gathered`/`gather`, `split`, `multline`, `equation`.
+- Spacing `\,` `\:` `\;` `\!` `\quad` `\qquad`, the named forms, and explicit `\hspace{1em}` /
+  `\kern{3pt}` in em, ex, mu, pt, pc, cm, mm or in; invisible boxes with `\phantom` and friends.
 - Colors via `\textcolor{red}{...}` / `\color{#FF8800}` (xcolor base names plus `#RGB`/`#RRGGBB`/`#AARRGGBB`), framed content via `\boxed{...}`.
-- Stacked annotations via `\overset{!}{=}` and `\underset{n \to \infty}{\lim}`.
+- Stacked annotations via `\overset{!}{=}`, `\underset{n \to \infty}{\lim}` and `\stackrel`.
 - Optional constrained layout with automatic top-level line breaking at mathematical relations and operators.
 - Individually disableable parser modules through `ParserConfig.enabledModules`.
+
+### Unsupported commands
+
+By default an unknown command does not fail the parse: it becomes a `MathNode.Unknown` and is
+drawn as the source text the author typed, so the rest of the formula still renders. This is
+what a formula needs while it is being typed or streamed, where the tail is routinely an
+unfinished command.
+
+```kotlin
+// Renders as: a + \nosuch b
+LatexParser().parse("a + \\nosuch b")
+
+// Validating parser: rejects unknown commands, environments, delimiters and colors.
+LatexParser(ParserConfig(strictCommands = true)).parse("a + \\nosuch b") // throws
+```
+
+Still missing, and still drawn as source: `\overbrace`/`\underbrace` (they need a stretchable
+brace primitive in the renderers) and the infix `{n \choose k}`/`\genfrac` forms.
 
 ## Android usage
 

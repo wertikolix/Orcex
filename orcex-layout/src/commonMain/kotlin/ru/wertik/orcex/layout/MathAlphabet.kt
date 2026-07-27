@@ -13,6 +13,9 @@ internal object MathAlphabet {
         'C' to 0x2102, 'H' to 0x210D, 'N' to 0x2115, 'P' to 0x2119, 'Q' to 0x211A,
         'R' to 0x211D, 'Z' to 0x2124,
     )
+    private val frakturExceptions = mapOf(
+        'C' to 0x212D, 'H' to 0x210C, 'I' to 0x2111, 'R' to 0x211C, 'Z' to 0x2128,
+    )
 
     fun apply(value: String, style: TextStyle?): String {
         if (style == null) return value
@@ -24,8 +27,12 @@ internal object MathAlphabet {
     private fun mappedCodePoint(character: Char, style: TextStyle): Int = when (style) {
         TextStyle.BOLD -> range(character, 0x1D400, 0x1D41A) ?: character.code
         TextStyle.ITALIC -> italicExceptions[character] ?: range(character, 0x1D434, 0x1D44E) ?: character.code
+        TextStyle.BOLD_ITALIC -> range(character, 0x1D468, 0x1D482) ?: character.code
         TextStyle.CALLIGRAPHIC -> calligraphicExceptions[character] ?: range(character, 0x1D49C, 0x1D4B6) ?: character.code
         TextStyle.BLACKBOARD -> blackboardExceptions[character] ?: range(character, 0x1D538, 0x1D552) ?: character.code
+        TextStyle.SANS_SERIF -> range(character, 0x1D5A0, 0x1D5BA) ?: character.code
+        TextStyle.MONOSPACE -> range(character, 0x1D670, 0x1D68A) ?: character.code
+        TextStyle.FRAKTUR -> frakturExceptions[character] ?: range(character, 0x1D504, 0x1D51E) ?: character.code
         TextStyle.ROMAN -> character.code
     }
 

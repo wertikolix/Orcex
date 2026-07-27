@@ -8,7 +8,9 @@ internal class MatrixLayouter(
     private val scope: LayoutScope,
     private val decorations: DecorationLayouter,
 ) {
-    fun layout(node: MathNode.Matrix, style: MathStyle): LayoutBox {
+    fun layout(node: MathNode.Matrix, outerStyle: MathStyle): LayoutBox {
+        // `smallmatrix` is script sized, which is the only thing that makes it small.
+        val style = if (node.environment == MatrixEnvironment.SMALL_MATRIX) outerStyle.script() else outerStyle
         val cells = node.rows.map { row -> row.map { cell -> scope.box(cell, style) } }
         val columns = cells.maxOfOrNull { it.size } ?: 0
         val widths = (0 until columns).map { column -> cells.maxOfOrNull { it.getOrNull(column)?.width ?: 0f } ?: 0f }
@@ -44,6 +46,9 @@ internal class MatrixLayouter(
         MatrixEnvironment.PMATRIX -> decorations.wrap("(", ")", content, style)
         MatrixEnvironment.BMATRIX -> decorations.wrap("[", "]", content, style)
         MatrixEnvironment.VMATRIX -> decorations.wrap("|", "|", content, style)
+        MatrixEnvironment.BRACE_MATRIX -> decorations.wrap("{", "}", content, style)
+        MatrixEnvironment.NORM_MATRIX -> decorations.wrap("\u2016", "\u2016", content, style)
+        MatrixEnvironment.SMALL_MATRIX -> content
         MatrixEnvironment.CASES -> decorations.wrap("{", "", content, style)
     }
 }

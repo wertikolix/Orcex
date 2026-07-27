@@ -10,6 +10,9 @@ import kotlin.test.assertTrue
 class LatexParserTest {
     private val parser = LatexParser()
 
+    /** Validating parser: what an authoring tool or a content pipeline would use. */
+    private val strict = LatexParser(ParserConfig(strictCommands = true))
+
     @Test
     fun parsesNestedDisplayFormula() {
         val parsed = parser.parse("\\left(\\frac{\\sum_{i=1}^{n} i^2}{\\sqrt[3]{x+\\alpha}}\\right)")
@@ -48,7 +51,49 @@ class LatexParserTest {
         assertFailsWith<LatexParseException> { lite.parse("\\frac{1}{2}") }
         assertFailsWith<LatexParseException> { parser.parse("\\left(x+1") }
         assertFailsWith<LatexParseException> { parser.parse("x^^2") }
-        assertFailsWith<LatexParseException> { parser.parse("\\unknown{x}") }
+        assertFailsWith<LatexParseException> { strict.parse("\\unknown{x}") }
+    }
+
+    @Test
+    fun keepsTheFormulaAroundAnUnsupportedCommand() {
+        val parsed = assertIs<MathNode.Sequence>(parser.parse("a + \\unsupported{b} = c"))
+        val unknown = parsed.children.filterIsInstance<MathNode.Unknown>().single()
+
+        assertEquals("unsupported", unknown.command)
+        assertEquals("\\unsupported", unknown.source)
+        // The argument is not swallowed: it stays in the formula as an ordinary group.
+        assertEquals(listOf("a", "+", "b", "=", "c"), parsed.symbolValues())
+    }
+
+    @Test
+    fun unknownConstructsDegradeInsteadOfFailingByDefault() {
+        // Unknown delimiter, unknown environment and unknown colour each keep the content.
+        assertIs<MathNode.Delimited>(parser.parse("\\left\\nope x \\right)").onlyChild())
+        val environment = assertIs<MathNode.Matrix>(parser.parse("\\begin{nope}a & b\\end{nope}").onlyChild())
+        assertEquals(MatrixEnvironment.ALIGNED, environment.environment)
+        assertEquals(listOf("x"), parser.parse("\\textcolor{nope}{x}").symbolValues())
+
+        listOf("\\left\\nope x \\right)", "\\begin{nope}a\\end{nope}", "\\textcolor{nope}{x}").forEach { formula ->
+            assertFailsWith<LatexParseException>(formula) { strict.parse(formula) }
+        }
+    }
+
+    @Test
+    fun prefixesEndingInsideACommandNameParse() {
+        // Formulas are parsed while they are still being typed or streamed, so a prefix
+        // that stops inside a command name must not cost the whole formula.
+        listOf("\\alpha + \\", "\\alpha + \\unsup", "\\alpha + \\unsupported").forEach { prefix ->
+            val children = assertIs<MathNode.Sequence>(parser.parse(prefix)).children
+            assertIs<MathNode.Unknown>(children.last(), prefix)
+            assertFailsWith<LatexParseException>(prefix) { strict.parse(prefix) }
+        }
+
+        val formula = "\\alpha + \\unsupported{x} \\cdot \\frac{\\sqrt{2}}{3} = \\gamma"
+        val prefixes = (1..formula.length).map { length -> formula.substring(0, length) }
+        val lenientParsed = prefixes.count { prefix -> runCatching { parser.parse(prefix) }.isSuccess }
+        val strictParsed = prefixes.count { prefix -> runCatching { strict.parse(prefix) }.isSuccess }
+
+        assertTrue(lenientParsed > strictParsed, "lenient=$lenientParsed strict=$strictParsed")
     }
 
     @Test
@@ -121,38 +166,61 @@ class LatexParserTest {
         assertEquals(null, CommandCatalog.space("unknown"))
         assertEquals(listOf("⟨", "⟩", "{", "}", "⌊", "⌋", "⌈", "⌉", "|"), listOf("langle", "rangle", "lbrace", "rbrace", "lfloor", "rfloor", "lceil", "rceil", "vert").map(CommandCatalog::delimiter))
         assertEquals(null, CommandCatalog.delimiter("unknown"))
-        assertEquals(AccentType.entries, listOf("hat", "bar", "vec", "dot", "tilde").mapNotNull(CommandCatalog::accent))
+        // Every enum entry has to be reachable from a command, or it is dead weight.
+        assertEquals(
+            AccentType.entries,
+            listOf(
+                "hat", "bar", "vec", "dot", "tilde", "acute", "grave", "breve", "check",
+                "mathring", "ddot", "dddot", "overleftarrow", "underline",
+            ).mapNotNull(CommandCatalog::accent),
+        )
         assertEquals(null, CommandCatalog.accent("unknown"))
-        assertEquals(TextStyle.entries, listOf("mathrm", "mathbf", "mathit", "mathcal", "mathbb").mapNotNull(CommandCatalog::style))
+        assertEquals(
+            TextStyle.entries,
+            listOf(
+                "mathrm", "mathbf", "mathit", "boldsymbol", "mathcal", "mathbb",
+                "mathsf", "mathtt", "mathfrak",
+            ).mapNotNull(CommandCatalog::style),
+        )
         assertEquals(null, CommandCatalog.style("unknown"))
-        assertEquals(MatrixEnvironment.entries, listOf("aligned", "matrix", "pmatrix", "bmatrix", "vmatrix", "cases").mapNotNull(CommandCatalog::environment))
+        assertEquals(
+            MatrixEnvironment.entries,
+            listOf(
+                "aligned", "matrix", "pmatrix", "bmatrix", "vmatrix", "cases",
+                "Bmatrix", "Vmatrix", "smallmatrix",
+            ).mapNotNull(CommandCatalog::environment),
+        )
         assertEquals(MatrixEnvironment.ALIGNED, CommandCatalog.environment("align*"))
         assertEquals(MatrixEnvironment.ALIGNED, CommandCatalog.environment("gathered"))
         assertEquals(null, CommandCatalog.environment("unknown"))
 
-        val lenient = LatexParser(ParserConfig(strictCommands = false)).parse("\\unknown").onlyChild()
-        assertEquals("\\unknown", assertIs<MathNode.Symbol>(lenient).value)
+        val lenient = parser.parse("\\unknown").onlyChild()
+        assertEquals(MathNode.Unknown("unknown"), lenient)
     }
 
     @Test
     fun rejectsMalformedTokensAndDisabledModules() {
         listOf(
-            "\\",
             "}",
             "x__1",
             "x^",
             "\\frac{1}",
             "\\sqrt[3{x}",
             "\\left{x\\right)",
-            "\\left\\unknown x\\right)",
-            "\\left(x\\right\\unknown)",
             "\\text x",
             "\\text{abc",
-            "\\begin{unknown}x\\end{unknown}",
             "\\begin{matrix}x\\end{pmatrix}",
             "\\begin{matrix}x",
-            "\\begin{matrix}x\\oops y\\end{matrix}",
         ).forEach { formula -> assertFailsWith<LatexParseException>(formula) { parser.parse(formula) } }
+
+        // Unsupported and unfinished names are only fatal for a validating parser.
+        listOf(
+            "\\",
+            "\\left\\unknown x\\right)",
+            "\\left(x\\right\\unknown)",
+            "\\begin{unknown}x\\end{unknown}",
+            "\\begin{matrix}x\\oops y\\end{matrix}",
+        ).forEach { formula -> assertFailsWith<LatexParseException>(formula) { strict.parse(formula) } }
 
         mapOf(
             LatexModule.SCRIPTS to "x^2",
@@ -183,6 +251,8 @@ class LatexParserTest {
         is MathNode.Boxed -> content.symbolValues()
         is MathNode.Stacked -> base.symbolValues() + (above?.symbolValues() ?: emptyList()) + (below?.symbolValues() ?: emptyList())
         is MathNode.Matrix -> rows.flatten().flatMap { it.symbolValues() }
+        is MathNode.Unknown -> emptyList()
+        is MathNode.Phantom -> content.symbolValues()
     }
 
     private fun MathNode.onlyChild(): MathNode = assertIs<MathNode.Sequence>(this).children.single()

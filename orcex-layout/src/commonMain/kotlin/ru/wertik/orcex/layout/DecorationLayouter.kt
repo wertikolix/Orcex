@@ -67,9 +67,27 @@ internal class DecorationLayouter(private val scope: LayoutScope) {
         val mark = when (node.accent) {
             AccentType.HAT -> "ˆ"
             AccentType.VEC -> "→"
+            AccentType.LEFT_VEC -> "←"
             AccentType.DOT -> "˙"
+            AccentType.DOUBLE_DOT -> "¨"
+            AccentType.TRIPLE_DOT -> "˙˙˙"
             AccentType.TILDE -> "˜"
-            AccentType.BAR -> null
+            AccentType.ACUTE -> "´"
+            AccentType.GRAVE -> "`"
+            AccentType.BREVE -> "˘"
+            AccentType.CHECK -> "ˇ"
+            AccentType.RING -> "˚"
+            AccentType.BAR, AccentType.UNDERLINE -> null
+        }
+        if (node.accent == AccentType.UNDERLINE) {
+            val thickness = max(1f, style.fontSize * 0.04f)
+            val ruleY = content.descent + gap
+            return LayoutBox(
+                content.width,
+                content.ascent,
+                content.descent + gap + thickness,
+                content.commands + DrawCommand.Line(0f, ruleY, content.width, ruleY, thickness, style.color),
+            )
         }
         if (mark == null) {
             val thickness = max(1f, style.fontSize * 0.04f)

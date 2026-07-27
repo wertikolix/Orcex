@@ -2,6 +2,27 @@
 
 All notable changes to Orcex are documented here.
 
+## Unreleased
+
+- Unknown commands no longer fail the parse. `ParserConfig.strictCommands` now defaults to
+  `false`, and an unsupported command becomes `MathNode.Unknown`, which renders as the source
+  text the author typed. Unknown environments, delimiters and colors degrade the same way, and
+  a trailing backslash is treated as a command that is still being typed. Pass
+  `strictCommands = true` to get the old validating behaviour, which authoring tools and
+  content pipelines want.
+- Fill in the command catalog: the full Greek alphabet, the common relations, binary operators,
+  arrows, large operators, named functions and symbols; `\operatorname`, `\binom`, `\cfrac`,
+  `\atop`, `\stackrel`, `\pmod`, `\phantom` and its variants, `\hspace`/`\kern` with real units,
+  `\not`, `\middle`, the `\big`…`\Bigg` prefixes, `\lvert`/`\lVert`/`\llbracket` style delimiters,
+  the `\widehat`/`\overline`/`\underline`/`\acute`/`\breve`/`\check`/`\mathring` accents, the
+  `\mathsf`/`\mathtt`/`\mathfrak`/`\boldsymbol` fonts with their Unicode alphabets, and the
+  `Bmatrix`/`Vmatrix`/`smallmatrix`/`array`/`split`/`gather`/`multline`/`equation` environments.
+- Add `MathNode.Phantom`, `MathNode.Fraction.rule`, and the `AccentType`, `TextStyle` and
+  `MatrixEnvironment` entries the above needs.
+- Add `CommandCoverageTest`, a checklist that fails with the command name when a formula falls
+  back to `MathNode.Unknown`, so catalog gaps surface as failures rather than as `\command`
+  text in an app.
+
 ## 0.5.0 - 2026-05-27
 
 - Add color support: `\textcolor{color}{content}` and the `\color{color}` declaration produce `MathNode.Colored`; colors accept the xcolor base names plus `#RGB`/`#RRGGBB`/`#AARRGGBB` hex forms. Colors propagate through `MathStyle.color` into `DrawCommand.Text` and the new `DrawCommand.Line.color`, with renderer fallback for uncolored content in all three backends.

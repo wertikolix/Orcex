@@ -42,9 +42,24 @@ public class MathLayoutEngine(private val metrics: MathFontMetrics) {
         is MathNode.Boxed -> decorations.boxed(node, style)
         is MathNode.Stacked -> scripts.stacked(node, style)
         is MathNode.Matrix -> matrices.layout(node, style)
+        // An unsupported command is drawn as the source the author typed, upright, so it
+        // reads as "this command was not understood" rather than as maths.
+        is MathNode.Unknown -> text(node.source, style.withVariant(TextStyle.ROMAN))
+        is MathNode.Phantom -> phantom(node, style)
     }
 
-    private fun text(value: String, style: MathStyle): LayoutBox {
+    /** Lays the content out, keeps the requested dimensions and drops the drawing. */
+    private fun phantom(node: MathNode.Phantom, style: MathStyle): LayoutBox {
+        val content = box(node.content, style)
+        return LayoutBox(
+            width = if (node.width) content.width else 0f,
+            ascent = if (node.height) content.ascent else 0f,
+            descent = if (node.height) content.descent else 0f,
+            commands = emptyList(),
+        )
+    }
+
+    internal fun text(value: String, style: MathStyle): LayoutBox {
         val glyphs = MathAlphabet.apply(value, style.variant)
         val measure = metrics.measure(glyphs, style)
         return LayoutBox(measure.width, measure.ascent, measure.descent, listOf(DrawCommand.Text(glyphs, 0f, 0f, style)))

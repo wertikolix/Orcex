@@ -74,31 +74,137 @@ internal class SyntaxParser(
         }
         CommandCatalog.style(name)?.let {
             requireModule(LatexModule.STYLING)
+            // `\textbf` and friends set upright text; `\mathbf` and friends style maths.
+            if (CommandCatalog.isTextStyleCommand(name)) return MathNode.Styled(it, text())
             return MathNode.Styled(it, argument("style"))
         }
+        if (CommandCatalog.isDelimiterSize(name)) {
+            // `\big(` and friends only ask for a larger delimiter; the layout already
+            // scales delimiters to their content, so the size prefix is dropped.
+            return base()
+        }
         return when (name) {
-            "frac", "dfrac", "tfrac" -> fraction()
+            "frac", "dfrac", "tfrac", "cfrac" -> fraction(rule = true)
+            "binom", "dbinom", "tbinom" -> binomial()
+            "atop" -> fraction(rule = false)
             "sqrt" -> radical()
             "left" -> delimited()
-            "text" -> text()
+            "text", "mbox", "textnormal" -> text()
             "begin" -> matrix()
             "textcolor" -> colored()
             "color" -> colorDeclaration()
-            "boxed" -> boxed()
-            "overset" -> stacked(above = true)
+            "boxed", "fbox" -> boxed()
+            "overset", "stackrel" -> stacked(above = true)
             "underset" -> stacked(above = false)
-            else -> if (config.strictCommands) fail("Unsupported command \\$name") else MathNode.Symbol("\\$name")
+            "operatorname", "operatorname*" -> operatorName()
+            "pmod" -> parenthesisedModulo()
+            "middle" -> middleDelimiter()
+            "not" -> negated()
+            "mathstrut" -> MathNode.Phantom(MathNode.Symbol("("), width = false, height = true)
+            // Numbering metadata: no effect on the formula itself.
+            "label", "tag", "tag*" -> discardArgument()
+            "phantom" -> phantom(width = true, height = true)
+            "hphantom" -> phantom(width = true, height = false)
+            "vphantom" -> phantom(width = false, height = true)
+            "hspace", "hspace*", "kern", "mkern", "mskip", "hskip" -> horizontalSpace()
+            // Style declarations that this layout resolves on its own.
+            "displaystyle", "textstyle", "scriptstyle", "scriptscriptstyle", "limits", "nolimits",
+            "nonumber", "notag",
+                -> MathNode.Sequence(emptyList())
+            else -> unsupportedCommand(name)
         }
     }
 
-    private fun fraction(): MathNode {
+    /**
+     * An unsupported command is only fatal when the caller asked for validation. By
+     * default it becomes a [MathNode.Unknown] that renders as its source text, so the
+     * rest of the formula survives.
+     */
+    private fun unsupportedCommand(name: String): MathNode {
+        if (config.strictCommands) fail("Unsupported command \\$name")
+        return MathNode.Unknown(name)
+    }
+
+    private fun fraction(rule: Boolean): MathNode {
         requireModule(LatexModule.FRACTIONS)
-        return MathNode.Fraction(argument("numerator"), argument("denominator"))
+        return MathNode.Fraction(argument("numerator"), argument("denominator"), rule)
+    }
+
+    /** `\binom{n}{k}`: a rule-less fraction inside parentheses. */
+    private fun binomial(): MathNode {
+        requireModule(LatexModule.FRACTIONS)
+        val fraction = MathNode.Fraction(argument("binomial top"), argument("binomial bottom"), rule = false)
+        return MathNode.Delimited("(", fraction, ")")
+    }
+
+    /** `\operatorname{name}`: an upright multi-letter operator such as `sgn`. */
+    private fun operatorName(): MathNode {
+        val name = literalGroup().trim()
+        return MathNode.Symbol(name, SymbolKind.OPERATOR)
+    }
+
+    /** `\pmod{n}` renders as a spaced `(mod n)`. */
+    private fun parenthesisedModulo(): MathNode {
+        val modulus = argument("modulus")
+        return MathNode.Sequence(
+            listOf(
+                MathNode.Space(0.44f),
+                MathNode.Delimited(
+                    "(",
+                    MathNode.Sequence(
+                        listOf(
+                            MathNode.Symbol("mod", SymbolKind.OPERATOR),
+                            MathNode.Space(0.22f),
+                            modulus,
+                        ),
+                    ),
+                    ")",
+                ),
+            ),
+        )
+    }
+
+    private fun phantom(width: Boolean, height: Boolean): MathNode =
+        MathNode.Phantom(argument("phantom content"), width = width, height = height)
+
+    /** `\middle|` inside `\left … \right`: a delimiter that does not scale on its own. */
+    private fun middleDelimiter(): MathNode {
+        skipWhitespace()
+        val value = delimiter()
+        return if (value.isEmpty()) MathNode.Sequence(emptyList()) else MathNode.Symbol(value, SymbolKind.RELATION)
+    }
+
+    /** `\not` negates the symbol that follows it. */
+    private fun negated(): MathNode {
+        skipWhitespace()
+        val target = base()
+        return if (target is MathNode.Symbol) {
+            target.copy(value = CommandCatalog.negated(target.value))
+        } else {
+            MathNode.Sequence(listOf(MathNode.Symbol("\u0338"), target))
+        }
+    }
+
+    private fun discardArgument(): MathNode {
+        skipWhitespace()
+        if (current() is LatexToken.GroupStart) literalGroup()
+        return MathNode.Sequence(emptyList())
+    }
+
+    /** `\hspace{1em}` and the `\kern` family, in whatever unit they were written. */
+    private fun horizontalSpace(): MathNode {
+        val index = current().index
+        val value = literalGroup().trim()
+        val em = LatexDimension.parseEm(value)
+            ?: if (config.strictCommands) fail("Unsupported dimension $value", index) else 0f
+        return MathNode.Space(em)
     }
 
     private fun colored(): MathNode {
         requireModule(LatexModule.STYLING)
-        return MathNode.Colored(colorArgument(), argument("textcolor content"))
+        val color = colorArgument()
+        val content = argument("textcolor content")
+        return if (color == null) content else MathNode.Colored(color, content)
     }
 
     private fun colorDeclaration(): MathNode {
@@ -112,14 +218,17 @@ internal class SyntaxParser(
                 token is LatexToken.Alignment ||
                 (token is LatexToken.Command && (token.value == "\\" || token.value == "end" || token.value == "right"))
         }
-        return MathNode.Colored(color, content)
+        return if (color == null) content else MathNode.Colored(color, content)
     }
 
-    private fun colorArgument(): Int {
+    /** Colour of the declaration, or `null` when it is unknown and strictness is off. */
+    private fun colorArgument(): Int? {
         skipWhitespace()
         val index = current().index
         val value = literalGroup().trim()
-        return LatexColors.parse(value) ?: fail("Unsupported color $value", index)
+        val color = LatexColors.parse(value)
+        if (color == null && config.strictCommands) fail("Unsupported color $value", index)
+        return color
     }
 
     private fun boxed(): MathNode {
@@ -181,7 +290,20 @@ internal class SyntaxParser(
     private fun matrix(): MathNode {
         requireModule(LatexModule.MATRICES)
         val name = literalGroup()
-        val environment = CommandCatalog.environment(name) ?: fail("Unsupported environment $name")
+        if (CommandCatalog.hasColumnSpecification(name)) {
+            // The column specification only affects alignment, which this layout derives
+            // from the environment, so it is read and dropped.
+            skipWhitespace()
+            if (current() is LatexToken.GroupStart) literalGroup()
+        }
+        val environment = CommandCatalog.environment(name)
+            ?: if (config.strictCommands) {
+                fail("Unsupported environment $name")
+            } else {
+                // Row/cell structure is the one thing every environment shares, so an
+                // unknown one is laid out like `aligned` instead of losing the formula.
+                MatrixEnvironment.ALIGNED
+            }
         val rows = mutableListOf<List<MathNode>>()
         var row = mutableListOf<MathNode>()
         while (true) {
@@ -241,7 +363,8 @@ internal class SyntaxParser(
         is LatexToken.Character -> if (token.value == '.') "" else token.value.toString()
         is LatexToken.OptionalStart -> "["
         is LatexToken.OptionalEnd -> "]"
-        is LatexToken.Command -> CommandCatalog.delimiter(token.value) ?: fail("Unsupported delimiter \\${token.value}")
+        is LatexToken.Command -> CommandCatalog.delimiter(token.value)
+            ?: if (config.strictCommands) fail("Unsupported delimiter \\${token.value}") else ""
         else -> fail("Missing delimiter", token.index)
     }
 

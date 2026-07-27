@@ -44,9 +44,11 @@ class LatexColorAndDecorationTest {
 
     @Test
     fun rejectsUnknownAndMalformedColors() {
-        assertFailsWith<LatexParseException> { parser.parse("\\textcolor{nope}{x}") }
-        assertFailsWith<LatexParseException> { parser.parse("\\textcolor{#12345}{x}") }
-        assertFailsWith<LatexParseException> { parser.parse("\\textcolor{#GGHHII}{x}") }
+        // Unknown colours only fail a validating parser; the default keeps the content.
+        val strict = LatexParser(ParserConfig(strictCommands = true))
+        assertFailsWith<LatexParseException> { strict.parse("\\textcolor{nope}{x}") }
+        assertFailsWith<LatexParseException> { strict.parse("\\textcolor{#12345}{x}") }
+        assertFailsWith<LatexParseException> { strict.parse("\\textcolor{#GGHHII}{x}") }
         assertNull(LatexColors.parse("#ZZZ"))
         assertNull(LatexColors.parse("#AABBCCDDEE"))
     }
